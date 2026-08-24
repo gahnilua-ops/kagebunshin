@@ -72,26 +72,42 @@ ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --skip-deploy
 ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --no-approval
 ```
 
-### MCP Mode (for Kai 9000 and other AI platforms)
+### HTTP/SSE Server Mode (for Kai 9000 and remote MCP clients)
 
 ```bash
-MCP_MODE=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
+# Copy and fill env
+cp .env.example .env
+
+# Start the server (default port 3456)
+ANTHROPIC_API_KEY=sk-... node dist/index.js
 ```
 
-Add to your MCP config:
+Add to your Kai 9000 MCP config:
 ```json
 {
   "mcpServers": {
     "kagebunshin": {
-      "command": "node",
-      "args": ["/path/to/kagebunshin-mcp/dist/index.js"],
-      "env": {
-        "MCP_MODE": "1",
-        "ANTHROPIC_API_KEY": "your-key-here"
+      "url": "http://localhost:3456/sse",
+      "headers": {
+        "Authorization": "Bearer your-secret-token-here"
       }
     }
   }
 }
+```
+
+**Deploy remotely** (Railway, Render, any VPS):
+```bash
+# Set env vars on your host:
+# ANTHROPIC_API_KEY, PORT, KB_API_KEY
+# Then point Kai 9000 at:
+# https://your-host.railway.app/sse
+```
+
+### stdio Mode (for Claude Desktop / local MCP)
+
+```bash
+MCP_STDIO=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
 ```
 
 ### Available MCP Tools
@@ -169,4 +185,3 @@ Bohol-Panglao International Airport, Philippines
 ## License
 
 MIT
-# kagebunshin
