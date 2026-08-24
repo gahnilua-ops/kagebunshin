@@ -175,8 +175,7 @@ src/
 ## Created By
 
 **Gahni (Isagani Goloso)**
-Security Screening Officer / Developer
-Bohol-Panglao International Airport, Philippines
+Developer [PH]
 
 *"If it's not KageBunshin, it wouldn't be possible."*
 
