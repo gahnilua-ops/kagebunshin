@@ -9,7 +9,7 @@
 {
   "mcpServers": {
     "kagebunshin": {
-      "url": "http://localhost:3456/sse",
+      "url": "http://localhost:3456/mcp",
       "headers": {
         "Authorization": "Bearer your-secret-token-here"
       }
@@ -22,7 +22,7 @@
 {
   "mcpServers": {
     "kagebunshin": {
-      "url": "https://your-kagebunshin-url.railway.app/sse",
+      "url": "https://your-kagebunshin-url.railway.app/mcp",
       "headers": {
         "Authorization": "Bearer your-secret-token-here"
       }

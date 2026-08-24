@@ -201,6 +201,8 @@ async function runHTTPServer(): Promise<void> {
       transport.onclose = () => {
         if (transport!.sessionId) transports.delete(transport!.sessionId);
       };
+      const server = createMCPServer();
+      await server.connect(transport);
     }
 
     try {
