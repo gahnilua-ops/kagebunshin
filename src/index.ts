@@ -5,14 +5,16 @@
 // By Gahni (Isagani Goloso)
 //
 // Modes:
-//   HTTP/SSE  — default, for Kai 9000 and remote MCP clients
-//   stdio     — MCP_STDIO=1, for local Claude Desktop etc
-//   CLI       — node dist/index.js <project-root> [flags]
+//   HTTP (Streamable) — default, for Kai 9000 and remote MCP clients
+//   stdio             — MCP_STDIO=1, for local Claude Desktop etc
+//   CLI               — node dist/index.js <project-root> [flags]
 // ============================================================
 
+import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -144,7 +146,7 @@ function createMCPServer(): Server {
   return server;
 }
 
-// ── HTTP/SSE MODE (default — for Kai 9000) ───────────────
+// ── HTTP (Streamable) MODE (default — for Kai 9000) ──────
 
 async function runHTTPServer(): Promise<void> {
   const PORT = parseInt(process.env.PORT ?? "3456");
@@ -152,7 +154,7 @@ async function runHTTPServer(): Promise<void> {
 
   const app = express();
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: "10mb" }));
 
   // Auth middleware
   const authMiddleware = (req: Request, res: Response, next: Function) => {
@@ -170,30 +172,71 @@ async function runHTTPServer(): Promise<void> {
     res.json({ status: "ok", server: "kagebunshin-mcp", version: "0.1.0" });
   });
 
-  // SSE endpoint — each connection gets its own MCP server instance
-  app.get("/sse", authMiddleware, async (req: Request, res: Response) => {
-    console.log(`[KageBunshin] SSE client connected: ${req.ip}`);
+  // Streamable HTTP — one MCP server + transport per client session
+  const transports = new Map<string, StreamableHTTPServerTransport>();
 
-    const server = createMCPServer();
-    const transport = new SSEServerTransport("/messages", res);
-    await server.connect(transport);
+  const handleMcpRequest = async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
-    req.on("close", () => {
-      console.log(`[KageBunshin] SSE client disconnected: ${req.ip}`);
-    });
-  });
+    let transport: StreamableHTTPServerTransport | undefined;
+    if (sessionId) {
+      transport = transports.get(sessionId);
+      if (!transport) {
+        res.status(404).json({
+          jsonrpc: "2.0",
+          error: { code: -32001, message: `Unknown session: ${sessionId}` },
+          id: null,
+        });
+        return;
+      }
+    } else {
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        enableJsonResponse: true,
+        onsessioninitialized: (sid) => {
+          transports.set(sid, transport!);
+          console.log(`[KageBunshin] MCP session initialized: ${sid}`);
+        },
+      });
+      transport.onclose = () => {
+        if (transport!.sessionId) transports.delete(transport!.sessionId);
+      };
+    }
 
-  // Message endpoint — SSE transport posts messages here
-  app.post("/messages", authMiddleware, async (req: Request, res: Response) => {
-    // SSEServerTransport handles this internally via the paired /sse connection
+    try {
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      console.error("[KageBunshin] MCP request error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: { code: -32603, message: `Internal error: ${(err as Error).message}` },
+          id: null,
+        });
+      }
+    }
+  };
+
+  app.post("/mcp", authMiddleware, handleMcpRequest);
+  app.get("/mcp", authMiddleware, handleMcpRequest);
+  app.delete("/mcp", authMiddleware, async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    if (sessionId) {
+      const transport = transports.get(sessionId);
+      if (transport) {
+        await transport.close();
+        transports.delete(sessionId);
+        console.log(`[KageBunshin] MCP session closed: ${sessionId}`);
+      }
+    }
     res.status(200).json({ ok: true });
   });
 
   app.listen(PORT, () => {
     console.log(`🍃 KageBunshin MCP server running`);
-    console.log(`   SSE endpoint : http://localhost:${PORT}/sse`);
-    console.log(`   Health check : http://localhost:${PORT}/health`);
-    console.log(`   Auth         : ${API_KEY ? "Bearer token enabled" : "open (set KB_API_KEY to enable)"}`);
+    console.log(`   MCP endpoint  : http://localhost:${PORT}/mcp`);
+    console.log(`   Health check  : http://localhost:${PORT}/health`);
+    console.log(`   Auth          : ${API_KEY ? "Bearer token enabled" : "open (set KB_API_KEY to enable)"}`);
   });
 }
 
@@ -235,8 +278,9 @@ async function runCLI(): Promise<void> {
 
 if (process.env.MCP_STDIO === "1") {
   runStdioServer().catch(console.error);
-} else if (process.argv[2] && !process.argv[2].startsWith("--")) {
+} else if (process.argv[2] && !process.argv[2].startsWith("--") && process.argv[2] !== "server") {
   runCLI().catch((err) => { console.error("Fatal:", err); process.exit(1); });
 } else {
   runHTTPServer().catch(console.error);
 }
+

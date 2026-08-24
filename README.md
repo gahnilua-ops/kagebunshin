@@ -72,7 +72,7 @@ ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --skip-deploy
 ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --no-approval
 ```
 
-### HTTP/SSE Server Mode (for Kai 9000 and remote MCP clients)
+### HTTP Server Mode (Streamable HTTP — for Kai 9000 and remote MCP clients)
 
 ```bash
 # Copy and fill env
@@ -87,7 +87,7 @@ Add to your Kai 9000 MCP config:
 {
   "mcpServers": {
     "kagebunshin": {
-      "url": "http://localhost:3456/sse",
+      "url": "http://localhost:3456/mcp",
       "headers": {
         "Authorization": "Bearer your-secret-token-here"
       }
@@ -101,7 +101,7 @@ Add to your Kai 9000 MCP config:
 # Set env vars on your host:
 # ANTHROPIC_API_KEY, PORT, KB_API_KEY
 # Then point Kai 9000 at:
-# https://your-host.railway.app/sse
+# https://your-host.railway.app/mcp
 ```
 
 ### stdio Mode (for Claude Desktop / local MCP)
@@ -185,3 +185,4 @@ Bohol-Panglao International Airport, Philippines
 ## License
 
 MIT
+
