@@ -22,3 +22,11 @@ Result: DONE
 Build: PASS
 Tests: PASS (12 total; wiring type-checked by tsc, no clone.ts unit test added because clone.ts constructs `new Anthropic()` at module load)
 Notes: backlog #2 (per-clone token/cost budget cap) is now COMPLETE. Each file gets one TokenBudget(config.cloneTokenBudget) created at scan time and reused across scan->dryRun->execute, so a runaway file is capped. Guard uses estimateInputTokens(content)+phase-max-output; spend records actual usage. Default 30000 tokens/file. Docs/HEARTBEAT_LOOP.md holds the fixed heartbeat prompt (uncommitted meta). Next backlog item: orchestrator.ts structured JSON diff (Phase 3) or build.ts multi-file blame.
+
+## Tick 20260830T100554
+Task: Add structured JSON diff output from orchestrator Phase 3 (dry run) so a future tick / external tool can consume proposed changes programmatically
+Branch: auto/tick-20260830T100554
+Result: DONE
+Build: PASS
+Tests: PASS (12 total)
+Notes: Added `diffs?: DiffBlock[]` to KageBunshinResult. New `writeDiffManifest()` writes `<root>/.kagebunshin/dryrun.json` (generatedAt, fileCount, diffs[]) right after Phase 3 collects diffs and logs the path. Threaded `diffs` through all post-dry-run return points (DRY_RUN empty / approval-cancelled, VALIDATE build-failed / skipDeploy, final DEPLOY) via an added optional `diffs` param on `buildResult()`. Edited with full-block anchors + Unicode escapes for emoji log lines to avoid substring false-matches. Next backlog item: build.ts multi-file blame parser or deploy.ts vercel-CLI-loudy-failure check.
