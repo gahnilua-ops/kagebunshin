@@ -14,3 +14,11 @@ Result: DONE
 Build: PASS
 Tests: PASS (12 total: 6 dependency-graph + 6 token-budget)
 Notes: Created src/core/token-budget.ts (TokenBudget class + estimateInputTokens helper, pure/testable, no Anthropic dep) and tests/token-budget.test.ts (6 tests: starts-at-0, canAfford within limit, spend accumulates, clamp-negative + exhaustion, boundary-inclusive). Branched from auto/tick-20260829T204639 so the jest harness carried forward. Next: Tick #2-B — wire cloneTokenBudget through types.ts -> clone.ts (scan/dryRun/execute guards + spend) -> orchestrator.ts (one budget per file across phases) -> index.ts (DEFAULT_CONFIG + RunSchema). Do NOT reuse the incoherent work parked in stash@{0} (it imports nonexistent clone.ts exports).
+
+## Tick 20260830T094304 (Tick #2-B, same branch)
+Task: Wire cloneTokenBudget through types.ts -> clone.ts (scan/dryRun/execute guards + spend) -> orchestrator.ts (one TokenBudget per file across phases) -> index.ts (DEFAULT_CONFIG + RunSchema)
+Branch: auto/tick-20260830T094304
+Result: DONE
+Build: PASS
+Tests: PASS (12 total; wiring type-checked by tsc, no clone.ts unit test added because clone.ts constructs `new Anthropic()` at module load)
+Notes: backlog #2 (per-clone token/cost budget cap) is now COMPLETE. Each file gets one TokenBudget(config.cloneTokenBudget) created at scan time and reused across scan->dryRun->execute, so a runaway file is capped. Guard uses estimateInputTokens(content)+phase-max-output; spend records actual usage. Default 30000 tokens/file. Docs/HEARTBEAT_LOOP.md holds the fixed heartbeat prompt (uncommitted meta). Next backlog item: orchestrator.ts structured JSON diff (Phase 3) or build.ts multi-file blame.

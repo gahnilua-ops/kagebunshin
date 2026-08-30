@@ -14,6 +14,7 @@ import {
 } from "./types";
 import { buildDependencyGraph, getExecutionOrder } from "./dependency-graph";
 import { cloneScan, cloneDryRun, cloneExecute } from "../clones/clone";
+import { TokenBudget } from "./token-budget";
 import { runBuild, parseBuildErrors } from "../phases/build";
 import { runGitDeploy, runVercelDeploy } from "../phases/deploy";
 
@@ -40,6 +41,7 @@ export async function runKageBunshin(
   // ── PHASE 1: SCAN (parallel where safe) ───────────────
   log("\n🔍 Phase 1: Deploying scan clones...");
   const scanReports = new Map<string, CloneReport>();
+  const budgets = new Map<string, TokenBudget>();
 
   for (const batch of executionOrder) {
     const batchLabel =
@@ -50,7 +52,13 @@ export async function runKageBunshin(
 
     if (batch.length === 1 || isIndependentBatch(batch, executionOrder)) {
       // True parallel
-      const results = await Promise.all(batch.map((f) => cloneScan(f, config)));
+      const results = await Promise.all(
+        batch.map((f) => {
+          const b = new TokenBudget(config.cloneTokenBudget);
+          budgets.set(f.path, b);
+          return cloneScan(f, config, b);
+        })
+      );
       for (const r of results) {
         scanReports.set(r.file, r);
         totalTokens += r.tokensUsed;
@@ -58,7 +66,9 @@ export async function runKageBunshin(
     } else {
       // Sequential within cluster
       for (const file of batch) {
-        const report = await cloneScan(file, config);
+        const b = new TokenBudget(config.cloneTokenBudget);
+        budgets.set(file.path, b);
+        const report = await cloneScan(file, config, b);
         scanReports.set(report.file, report);
         totalTokens += report.tokensUsed;
       }
@@ -89,7 +99,8 @@ export async function runKageBunshin(
     const file = allFiles.find((f) => f.path === report.file);
     if (!file) continue;
 
-    const diff = await cloneDryRun(file, report, config);
+    const budget = budgets.get(file.path) ?? new TokenBudget(config.cloneTokenBudget);
+    const diff = await cloneDryRun(file, report, config, budget);
     if (diff) diffs.push(diff);
   }
 
@@ -125,7 +136,8 @@ export async function runKageBunshin(
     const report = scanReports.get(diff.file);
     if (!file || !report) continue;
 
-    const result = await cloneExecute(file, report, config);
+    const budget = budgets.get(file.path) ?? new TokenBudget(config.cloneTokenBudget);
+    const result = await cloneExecute(file, report, config, budget);
 
     if (result.success && result.linesChanged.length > 0) {
       filesModified++;

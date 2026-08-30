@@ -30,6 +30,7 @@ import { KageBunshinConfig } from "./core/types";
 const DEFAULT_CONFIG: Partial<KageBunshinConfig> = {
   model: "claude-sonnet-4-6",
   maxConcurrentClones: 10,
+  cloneTokenBudget: 30000, // per-clone token cap; skip a runaway file instead of blowing the tick's spend
   dryRunApproval: false,   // false by default in server mode — Kai controls approval
   skipDeploy: false,
   gitBranch: "main",
@@ -52,6 +53,7 @@ const RunSchema = z.object({
   commitMessage: z.string().optional(),
   ignorePatterns: z.array(z.string()).optional().default([]),
   maxConcurrentClones: z.number().optional().default(10),
+  cloneTokenBudget: z.number().optional().default(30000),
 });
 
 const ScanOnlySchema = z.object({
@@ -83,6 +85,7 @@ function createMCPServer(): Server {
             commitMessage: { type: "string", description: "Git commit message" },
             ignorePatterns: { type: "array", items: { type: "string" }, description: "Additional glob patterns to ignore" },
             maxConcurrentClones: { type: "number", description: "Max parallel clone API calls (default: 10)" },
+            cloneTokenBudget: { type: "number", description: "Per-clone (per-file) token ceiling to cap runaway API spend (default: 30000)" },
           },
           required: ["projectRoot"],
         },

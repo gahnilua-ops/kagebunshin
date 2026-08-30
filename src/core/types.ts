@@ -79,6 +79,7 @@ export interface KageBunshinConfig {
   anthropicApiKey: string;
   model: string;
   maxConcurrentClones: number;
+  cloneTokenBudget: number;    // per-clone (per-file) token ceiling to cap runaway API spend
   dryRunApproval: boolean;     // pause for human approval before executing
   skipDeploy: boolean;         // stop after build validation
   gitBranch: string;

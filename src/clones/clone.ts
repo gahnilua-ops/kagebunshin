@@ -14,19 +14,33 @@ import {
   Issue,
   Suggestion,
 } from "../core/types";
+import { TokenBudget, estimateInputTokens } from "../core/token-budget";
 
 const client = new Anthropic();
+
+// Per-phase response token ceilings - mirror the max_tokens sent to the API,
+// used to estimate whether a call would breach the per-clone token budget.
+const SCAN_MAX_OUTPUT = 1024;
+const DRYRUN_MAX_OUTPUT = 4096;
+const EXECUTE_MAX_OUTPUT = 4096;
 
 // ── PHASE 1: SCAN ─────────────────────────────────────────
 export async function cloneScan(
   file: ProjectFile,
-  config: KageBunshinConfig
+  config: KageBunshinConfig,
+  budget: TokenBudget
 ): Promise<CloneReport> {
   const cloneId = makeCloneId(file.path);
   const start = Date.now();
 
   const content = tryRead(file.absPath);
   if (!content) {
+    return emptyReport(cloneId, file, start);
+  }
+
+  const scanEstimate = estimateInputTokens(content) + SCAN_MAX_OUTPUT;
+  if (!budget.canAfford(scanEstimate)) {
+    console.warn(`[Clone ${cloneId}] Token budget exhausted (${budget.used}/${budget.limit}) - skipping scan for ${file.path}`);
     return emptyReport(cloneId, file, start);
   }
 
@@ -41,6 +55,7 @@ export async function cloneScan(
 
     const text = extractText(response);
     const parsed = parseScanResponse(text);
+    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
 
     return {
       cloneId,
@@ -62,10 +77,17 @@ export async function cloneScan(
 export async function cloneDryRun(
   file: ProjectFile,
   report: CloneReport,
-  config: KageBunshinConfig
+  config: KageBunshinConfig,
+  budget: TokenBudget
 ): Promise<DiffBlock | null> {
   const content = tryRead(file.absPath);
   if (!content) return null;
+
+  const dryRunEstimate = estimateInputTokens(content) + DRYRUN_MAX_OUTPUT;
+  if (!budget.canAfford(dryRunEstimate)) {
+    console.warn(`[Clone ${report.cloneId}] Token budget exhausted (${budget.used}/${budget.limit}) - skipping dry run for ${file.path}`);
+    return null;
+  }
 
   const prompt = buildExecutePrompt(file, content, report, true);
 
@@ -80,6 +102,8 @@ export async function cloneDryRun(
     const proposed = extractCodeBlock(text);
 
     if (!proposed || proposed.trim() === content.trim()) return null;
+
+    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
 
     return {
       cloneId: report.cloneId,
@@ -99,10 +123,17 @@ export async function cloneDryRun(
 export async function cloneExecute(
   file: ProjectFile,
   report: CloneReport,
-  config: KageBunshinConfig
+  config: KageBunshinConfig,
+  budget: TokenBudget
 ): Promise<{ success: boolean; linesChanged: number[] }> {
   const content = tryRead(file.absPath);
   if (!content) return { success: false, linesChanged: [] };
+
+  const execEstimate = estimateInputTokens(content) + EXECUTE_MAX_OUTPUT;
+  if (!budget.canAfford(execEstimate)) {
+    console.warn(`[Clone ${report.cloneId}] Token budget exhausted (${budget.used}/${budget.limit}) - skipping execute for ${file.path}`);
+    return { success: false, linesChanged: [] };
+  }
 
   const prompt = buildExecutePrompt(file, content, report, false);
 
@@ -125,6 +156,8 @@ export async function cloneExecute(
 
     // Write improved version
     fs.writeFileSync(file.absPath, newContent, "utf-8");
+
+    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
 
     const changed = diffLines(content, newContent);
     return { success: true, linesChanged: changed };
