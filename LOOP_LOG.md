@@ -38,3 +38,11 @@ Result: DONE
 Build: PASS
 Tests: PASS (17 total: +5 build.test.ts)
 Notes: Root cause was FILE_PATTERN requiring a leading ./ / or backslash AND only matching (line,col) paren format, so the dominant tsc `src/foo.ts:12:5 - error TS...` form was never captured — multi-file failures slipped through. New FILE_PATTERN optionally allows leading ./ ../ / and consumes an optional :line:col, plus resolves absolute/nested error paths to relative blame keys via suffix match (so stack-trace /abs/proj/src/a.ts still blames src/a.ts). Added tests/build.test.ts: single-file paren, multi-file :line:col, webpack ERROR in, absolute stack-trace suffix match, and the 3-lowest-confidence fallback cap. Next backlog item: deploy.ts loud-failure check for a missing vercel CLI, or Type-tighten types.ts.
+
+## Tick 20260830T111815
+Task: Make the deploy phase git-only — remove the Vercel step entirely (user directive: "this project doesn't use vercel, use git for deploy explicitly only")
+Branch: auto/tick-20260830T111815
+Result: DONE
+Build: PASS
+Tests: PASS (17 total)
+Notes: Supersedes the prior backlog item "deploy.ts loud-failure check for a missing vercel CLI" — that task is CANCELLED because the pipeline must not talk to Vercel at all. Changes: (1) deploy.ts — deleted runVercelDeploy, header now says git-only; (2) types.ts — DeployResult reduced to gitSuccess/gitOutput (vercelSuccess/vercelOutput/vercelUrl removed); (3) orchestrator.ts — dropped runVercelDeploy import + call + log + spread (deployResult: gitResult); skipDeploy message now says "git deploy"; (4) index.ts — tool description and skipDeploy description no longer mention Vercel. emoji log lines (🚀/✅/❌/🍃) untouched. Next backlog item: Type-tighten types.ts (look for `any`) or README/docs drift check vs index.ts flags.
