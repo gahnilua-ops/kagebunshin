@@ -30,3 +30,11 @@ Result: DONE
 Build: PASS
 Tests: PASS (12 total)
 Notes: Added `diffs?: DiffBlock[]` to KageBunshinResult. New `writeDiffManifest()` writes `<root>/.kagebunshin/dryrun.json` (generatedAt, fileCount, diffs[]) right after Phase 3 collects diffs and logs the path. Threaded `diffs` through all post-dry-run return points (DRY_RUN empty / approval-cancelled, VALIDATE build-failed / skipDeploy, final DEPLOY) via an added optional `diffs` param on `buildResult()`. Edited with full-block anchors + Unicode escapes for emoji log lines to avoid substring false-matches. Next backlog item: build.ts multi-file blame parser or deploy.ts vercel-CLI-loudy-failure check.
+
+## Tick 20260830T104519
+Task: Harden build.ts blame parser to handle multi-file tsc/webpack failures (not just single-culprit)
+Branch: auto/tick-20260830T104519
+Result: DONE
+Build: PASS
+Tests: PASS (17 total: +5 build.test.ts)
+Notes: Root cause was FILE_PATTERN requiring a leading ./ / or backslash AND only matching (line,col) paren format, so the dominant tsc `src/foo.ts:12:5 - error TS...` form was never captured — multi-file failures slipped through. New FILE_PATTERN optionally allows leading ./ ../ / and consumes an optional :line:col, plus resolves absolute/nested error paths to relative blame keys via suffix match (so stack-trace /abs/proj/src/a.ts still blames src/a.ts). Added tests/build.test.ts: single-file paren, multi-file :line:col, webpack ERROR in, absolute stack-trace suffix match, and the 3-lowest-confidence fallback cap. Next backlog item: deploy.ts loud-failure check for a missing vercel CLI, or Type-tighten types.ts.

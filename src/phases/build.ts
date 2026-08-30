@@ -49,33 +49,46 @@ function extractErrorLines(output: string): string[] {
     .filter(Boolean);
 }
 
+// Matches source-file paths from tsc / webpack / vite / stack-trace output:
+//   ./src/foo.ts(12,5): error TS2345
+//   src/foo.ts:12:5 - error TS2345        (tsc default format)
+//   ERROR in ./src/bar.js                 (webpack)
+//   at fn (/abs/proj/src/baz.ts:10:3)     (stack traces)
+// Leading ./, ../ or / is optional so bare `src/...` paths are also captured.
+const FILE_PATTERN =
+  /((?:\.\.?\/|\/)?[\w@./\\-]+\.(?:ts|tsx|js|jsx|mjs|cjs))(?::\d+(?::\d+)?)?/g;
+
 export function parseBuildErrors(
   errorLines: string[],
   blameMap: BlameMap
 ): string[] {
   const suspects = new Set<string>();
 
-  // Try to extract file paths from error lines
-  // Common patterns: ./src/foo.ts(12,5): error TS2345
-  // or: ERROR in ./src/bar.js
-  const filePattern = /([./\\][\w./\\-]+\.(ts|tsx|js|jsx|mjs|cjs))/g;
-
   for (const line of errorLines) {
     let match;
-    filePattern.lastIndex = 0;
-    while ((match = filePattern.exec(line)) !== null) {
-      const filePath = match[1]
+    FILE_PATTERN.lastIndex = 0;
+    while ((match = FILE_PATTERN.exec(line)) !== null) {
+      const raw = match[1]
         .replace(/^\.\//, "")
+        .replace(/^\.\.\//, "")
         .replace(/\\/g, "/");
 
-      // Check if this file was touched by a clone
-      if (blameMap[filePath]) {
-        suspects.add(filePath);
+      // Resolve to the canonical blame key. A build error may report an
+      // absolute or nested path; match by exact key first, then by suffix
+      // (the path ends with a known relative blame key) so we still blame
+      // the right file.
+      let key: string | undefined = blameMap[raw] ? raw : undefined;
+      if (!key) {
+        key = Object.keys(blameMap).find((k) => raw.endsWith(k));
+      }
+      if (key) {
+        suspects.add(key);
       }
     }
   }
 
   // If we couldn't trace to specific files, return lowest-confidence clones
+  // as a fallback so the caller still has something to surface.
   if (suspects.size === 0) {
     const byConfidence = Object.entries(blameMap)
       .sort(([, a], [, b]) => a.confidence - b.confidence)
