@@ -4,6 +4,7 @@
 // ============================================================
 
 import * as readline from "readline";
+import * as fs from "fs";
 import {
   KageBunshinConfig,
   KageBunshinResult,
@@ -105,10 +106,11 @@ export async function runKageBunshin(
   }
 
   log(`   ${diffs.length} files have proposed changes`);
+  writeDiffManifest(config.projectRoot, diffs);
 
   if (diffs.length === 0) {
     log("   ✅ Clones agreed no changes were needed after dry run.");
-    return buildResult("DRY_RUN", allFiles, 0, totalIssues, blameMap, startTime, totalTokens);
+    return buildResult("DRY_RUN", allFiles, 0, totalIssues, blameMap, startTime, totalTokens, undefined, diffs);
   }
 
   // Print diff summary
@@ -123,7 +125,7 @@ export async function runKageBunshin(
     );
     if (!approved) {
       log("   ⛔ Execution cancelled by user.");
-      return buildResult("DRY_RUN", allFiles, 0, totalIssues, blameMap, startTime, totalTokens);
+      return buildResult("DRY_RUN", allFiles, 0, totalIssues, blameMap, startTime, totalTokens, undefined, diffs);
     }
   }
 
@@ -173,7 +175,7 @@ export async function runKageBunshin(
     const retryResult = await runBuild(config.projectRoot);
     if (!retryResult.success) {
       log("   ❌ Build still failing after restore. Aborting deploy.");
-      return buildResult("VALIDATE", allFiles, filesModified, totalIssues, blameMap, startTime, totalTokens, buildResult_);
+      return buildResult("VALIDATE", allFiles, filesModified, totalIssues, blameMap, startTime, totalTokens, buildResult_, diffs);
     }
     log("   ✅ Build recovered after restore.");
   } else {
@@ -182,7 +184,7 @@ export async function runKageBunshin(
 
   if (config.skipDeploy) {
     log("\n⏭️  skipDeploy=true — stopping before git/vercel.");
-    return buildResult("VALIDATE", allFiles, filesModified, totalIssues, blameMap, startTime, totalTokens, buildResult_);
+    return buildResult("VALIDATE", allFiles, filesModified, totalIssues, blameMap, startTime, totalTokens, buildResult_, diffs);
   }
 
   // ── PHASE 6: DEPLOY ───────────────────────────────────
@@ -212,6 +214,7 @@ export async function runKageBunshin(
     totalTokensUsed: totalTokens,
     totalDurationMs: Date.now() - startTime,
     blameMap,
+    diffs,
   };
 }
 
@@ -247,8 +250,20 @@ async function askApproval(question: string): Promise<boolean> {
   });
 }
 
+function writeDiffManifest(root: string, diffs: DiffBlock[]): void {
+  const outDir = `${root}/.kagebunshin`;
+  fs.mkdirSync(outDir, { recursive: true });
+  const manifest = {
+    generatedAt: new Date().toISOString(),
+    fileCount: diffs.length,
+    diffs,
+  };
+  const outPath = `${outDir}/dryrun.json`;
+  fs.writeFileSync(outPath, JSON.stringify(manifest, null, 2), "utf-8");
+  log(`   📄 Dry-run diff manifest written: ${outPath}`);
+}
+
 function restoreBackup(absPath: string): void {
-  const fs = require("fs");
   const bakPath = `${absPath}.bak`;
   if (fs.existsSync(bakPath)) {
     fs.copyFileSync(bakPath, absPath);
@@ -263,7 +278,8 @@ function buildResult(
   blameMap: BlameMap,
   startTime: number,
   totalTokens: number,
-  buildRes?: KageBunshinResult["buildResult"]
+  buildRes?: KageBunshinResult["buildResult"],
+  diffs?: DiffBlock[]
 ): KageBunshinResult {
   return {
     phase,
@@ -274,5 +290,6 @@ function buildResult(
     totalTokensUsed: totalTokens,
     totalDurationMs: Date.now() - startTime,
     blameMap,
+    diffs,
   };
 }

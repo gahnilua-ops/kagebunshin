@@ -101,4 +101,5 @@ export interface KageBunshinResult {
   totalTokensUsed: number;
   totalDurationMs: number;
   blameMap: BlameMap;
+  diffs?: DiffBlock[];   // machine-readable proposed-change manifest (populated after dry run)
 }
