@@ -1,6 +1,6 @@
 // ============================================================
 // KageBunshin MCP — Deploy Phase
-// Git commit + push, then Vercel --prod
+// Git commit + push only (Vercel removed — git is the sole deploy path)
 // ============================================================
 
 import { exec } from "child_process";
@@ -43,34 +43,5 @@ export async function runGitDeploy(
     }
 
     return { gitSuccess: false, gitOutput: output };
-  }
-}
-
-export async function runVercelDeploy(
-  projectRoot: string
-): Promise<Pick<DeployResult, "vercelSuccess" | "vercelOutput" | "vercelUrl">> {
-  try {
-    const { stdout, stderr } = await execAsync("vercel --prod --yes", {
-      cwd: projectRoot,
-      timeout: 180_000, // 3 min for vercel deploy
-    });
-
-    const output = stdout + stderr;
-
-    // Extract deploy URL from vercel output
-    const urlMatch = output.match(/https:\/\/[\w.-]+\.vercel\.app/);
-    const vercelUrl = urlMatch ? urlMatch[0] : undefined;
-
-    return {
-      vercelSuccess: true,
-      vercelOutput: output,
-      vercelUrl,
-    };
-  } catch (err: any) {
-    const output = (err.stdout ?? "") + (err.stderr ?? "");
-    return {
-      vercelSuccess: false,
-      vercelOutput: output,
-    };
   }
 }

@@ -17,7 +17,7 @@ import { buildDependencyGraph, getExecutionOrder } from "./dependency-graph";
 import { cloneScan, cloneDryRun, cloneExecute } from "../clones/clone";
 import { TokenBudget } from "./token-budget";
 import { runBuild, parseBuildErrors } from "../phases/build";
-import { runGitDeploy, runVercelDeploy } from "../phases/deploy";
+import { runGitDeploy } from "../phases/deploy";
 
 export async function runKageBunshin(
   config: KageBunshinConfig
@@ -183,7 +183,7 @@ export async function runKageBunshin(
   }
 
   if (config.skipDeploy) {
-    log("\n⏭️  skipDeploy=true — stopping before git/vercel.");
+    log("\n⏭️  skipDeploy=true — stopping before git deploy.");
     return buildResult("VALIDATE", allFiles, filesModified, totalIssues, blameMap, startTime, totalTokens, buildResult_, diffs);
   }
 
@@ -196,12 +196,6 @@ export async function runKageBunshin(
   );
   log(gitResult.gitSuccess ? "   ✅ Git push success" : `   ❌ Git failed: ${gitResult.gitOutput}`);
 
-  const vercelResult = await runVercelDeploy(config.projectRoot);
-  log(vercelResult.vercelSuccess
-    ? `   ✅ Vercel deployed: ${vercelResult.vercelUrl}`
-    : `   ❌ Vercel failed: ${vercelResult.vercelOutput}`
-  );
-
   log(`\n🍃 KageBunshin complete — ${filesModified} files improved in ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
 
   return {
@@ -210,7 +204,7 @@ export async function runKageBunshin(
     filesModified,
     totalIssuesFound: totalIssues,
     buildResult: buildResult_,
-    deployResult: { ...gitResult, ...vercelResult },
+    deployResult: gitResult,
     totalTokensUsed: totalTokens,
     totalDurationMs: Date.now() - startTime,
     blameMap,

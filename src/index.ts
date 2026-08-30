@@ -74,13 +74,13 @@ function createMCPServer(): Server {
       {
         name: "kagebunshin_run",
         description:
-          "Full KageBunshin pipeline: deploy AI clones to scan all project files in parallel, synthesize improvements, execute changes, validate with npm build, git push, and vercel --prod deploy.",
+          "Full KageBunshin pipeline: deploy AI clones to scan all project files in parallel, synthesize improvements, execute changes, validate with npm build, git push.",
         inputSchema: {
           type: "object",
           properties: {
             projectRoot: { type: "string", description: "Absolute path to project root on the server" },
             dryRunApproval: { type: "boolean", description: "Pause for approval before writing changes (default: false)" },
-            skipDeploy: { type: "boolean", description: "Stop after build validation, skip git/vercel (default: false)" },
+            skipDeploy: { type: "boolean", description: "Stop after build validation, skip git deploy (default: false)" },
             gitBranch: { type: "string", description: "Git branch to push to (default: main)" },
             commitMessage: { type: "string", description: "Git commit message" },
             ignorePatterns: { type: "array", items: { type: "string" }, description: "Additional glob patterns to ignore" },

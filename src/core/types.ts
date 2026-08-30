@@ -69,9 +69,6 @@ export interface BuildResult {
 export interface DeployResult {
   gitSuccess: boolean;
   gitOutput: string;
-  vercelSuccess: boolean;
-  vercelOutput: string;
-  vercelUrl?: string;
 }
 
 export interface KageBunshinConfig {
