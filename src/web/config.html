@@ -287,6 +287,9 @@
             <input type="text" id="projectRoot" placeholder="/home/user/my-project" style="font-family:'JetBrains Mono',monospace;font-size:.85rem">
             <div class="hint">Absolute path to the project root — KageBunshin scans and improves files here</div>
           </div>
+          <div style="display:flex;gap:.75rem;align-items:center;margin-top:.5rem">
+            <span id="ws-info" style="font-size:.72rem;color:var(--text-3)"></span>
+          </div>
         </div>
       </div>
 
@@ -462,7 +465,7 @@
         document.getElementById('port').value=c.port||3456;
         document.getElementById('kbApiKey').value=c.kbApiKey||'';
         document.getElementById('last-saved').textContent='Last loaded: '+new Date().toLocaleTimeString();
-      }catch(e){toast('Failed to load configuration','er')}
+      }catch(e){console.error('[Config] Load failed:',e);toast('Failed to load: '+e.message,'er')}
     }
 
     function getConfig(){
