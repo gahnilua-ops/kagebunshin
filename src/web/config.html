@@ -278,6 +278,18 @@
         <div class="pipe-step"><span class="num">6</span> Deploy</div>
       </div>
 
+      <!-- Workspace -->
+      <div class="card" style="animation-delay:.18s">
+        <div class="card-h"><div class="card-ic">📁</div><h2>Workspace</h2><div class="badge" id="ws-status">Not set</div></div>
+        <div class="card-b">
+          <div class="fg">
+            <label>Project Directory</label>
+            <input type="text" id="projectRoot" placeholder="/home/user/my-project" style="font-family:'JetBrains Mono',monospace;font-size:.85rem">
+            <div class="hint">Absolute path to the project root — KageBunshin scans and improves files here</div>
+          </div>
+        </div>
+      </div>
+
       <div class="prov-grid">
         <div class="prov on" data-p="openrouter" onclick="selProv('openrouter')"><div class="ic">🌐</div><div class="nm">OpenRouter</div><div class="tg rec">Recommended</div></div>
         <div class="prov" data-p="groq" onclick="selProv('groq')"><div class="ic">⚡</div><div class="nm">Groq</div><div class="tg fast">Fastest</div></div>
