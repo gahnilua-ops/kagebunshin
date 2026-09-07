@@ -5,6 +5,11 @@
 
 import { exec } from "child_process";
 import { promisify } from "util";
+
+interface ExecError extends Error {
+  stdout?: string;
+  stderr?: string;
+}
 import { BuildResult, BlameMap } from "../core/types";
 
 const execAsync = promisify(exec);
@@ -23,8 +28,9 @@ export async function runBuild(projectRoot: string): Promise<BuildResult> {
       errorLines: [],
       suspectedFiles: [],
     };
-  } catch (err: any) {
-    const output = (err.stdout ?? "") + (err.stderr ?? "");
+  } catch (err: unknown) {
+    const e = (err instanceof Error ? err : {}) as ExecError;
+    const output = (e.stdout ?? "") + (e.stderr ?? "");
     const errorLines = extractErrorLines(output);
     return {
       success: false,

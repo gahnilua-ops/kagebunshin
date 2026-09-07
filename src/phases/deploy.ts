@@ -3,11 +3,16 @@
 // Git commit + push only (Vercel removed — git is the sole deploy path)
 // ============================================================
 
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
+
+interface ExecError extends Error {
+  stdout?: string;
+  stderr?: string;
+}
 import { DeployResult } from "../core/types";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export async function runGitDeploy(
   projectRoot: string,
@@ -16,17 +21,19 @@ export async function runGitDeploy(
 ): Promise<Pick<DeployResult, "gitSuccess" | "gitOutput">> {
   try {
     // Stage all changes
-    await execAsync("git add -A", { cwd: projectRoot });
+    await execFileAsync("git", ["add", "-A"], { cwd: projectRoot });
 
-    // Commit
-    const { stdout: commitOut } = await execAsync(
-      `git commit -m "${commitMessage}"`,
+    // Commit (uses execFile — no shell interpolation, safe from injection)
+    const { stdout: commitOut } = await execFileAsync(
+      "git",
+      ["commit", "-m", commitMessage],
       { cwd: projectRoot }
     );
 
     // Push
-    const { stdout: pushOut } = await execAsync(
-      `git push origin ${branch}`,
+    const { stdout: pushOut } = await execFileAsync(
+      "git",
+      ["push", "origin", branch],
       { cwd: projectRoot, timeout: 60_000 }
     );
 
@@ -34,8 +41,9 @@ export async function runGitDeploy(
       gitSuccess: true,
       gitOutput: commitOut + pushOut,
     };
-  } catch (err: any) {
-    const output = (err.stdout ?? "") + (err.stderr ?? "");
+  } catch (err: unknown) {
+    const e = (err instanceof Error ? err : {}) as ExecError;
+    const output = (e.stdout ?? "") + (e.stderr ?? "");
 
     // "nothing to commit" is not a failure
     if (output.includes("nothing to commit")) {

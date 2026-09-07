@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KageBunshin MCP — Configuration</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-hover: #1c2333;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #d29922;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .header h1 span { color: var(--accent); }
+
+    .header .version {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-header .icon { font-size: 1.25rem; }
+
+    .card-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .form-group .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e'%3E%3Cpath d='M6 8.5L1 3.5h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label {
+      font-size: 0.875rem;
+    }
+
+    .toggle-label .desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle .slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .slider { background: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(20px); }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover { background: var(--surface-hover); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: var(--red);
+    }
+
+    .btn-danger:hover { background: rgba(248, 81, 73, 0.1); }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast-success {
+      background: var(--green);
+      color: white;
+    }
+
+    .toast-error {
+      background: var(--red);
+      color: white;
+    }
+
+    .provider-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      margin-left: 0.5rem;
+    }
+
+    .env-var {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--orange);
+      background: var(--bg);
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+    }
+
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .container { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🍃 <span>KageBunshin</span> MCP Configuration</h1>
+    <span class="version">v0.2.0</span>
+  </div>
+
+  <div class="container">
+    <!-- Provider Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🤖</span>
+        <h2>AI Provider</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="openrouter">OpenRouter</option>
+              <option value="groq">Groq</option>
+              <option value="nvidia">NVIDIA NIM</option>
+              <option value="opencode">OpenCode</option>
+            </select>
+            <div class="hint">All providers use OpenAI-compatible chat completions API</div>
+          </div>
+          <div class="form-group">
+            <label for="model">Model</label>
+            <input type="text" id="model" placeholder="anthropic/claude-sonnet-4">
+            <div class="hint">Provider-specific model ID</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="apiKey">API Key</label>
+          <input type="password" id="apiKey" placeholder="sk-...">
+          <div class="hint">
+            Or set via environment variable:
+            <span class="env-var">OPENROUTER_API_KEY</span>
+            <span class="env-var">GROQ_API_KEY</span>
+            <span class="env-var">NVIDIA_API_KEY</span>
+            <span class="env-var">OPENCODE_API_KEY</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="baseUrl">Custom Base URL (optional)</label>
+          <input type="text" id="baseUrl" placeholder="Leave empty for default">
+          <div class="hint">Override the provider's default API endpoint</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">⚙️</span>
+        <h2>Pipeline Settings</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="maxConcurrentClones">Max Concurrent Clones</label>
+            <input type="number" id="maxConcurrentClones" min="1" max="50" value="10">
+            <div class="hint">Parallel API calls per phase (max 50)</div>
+          </div>
+          <div class="form-group">
+            <label for="cloneTokenBudget">Per-Clone Token Budget</label>
+            <input type="number" id="cloneTokenBudget" min="1000" max="200000" value="30000">
+            <div class="hint">Token ceiling per file to cap runaway spend</div>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <div>Dry Run Approval</div>
+            <div class="desc">Pause for human approval before executing changes</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="dryRunApproval">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <div>Skip Deploy</div>
+            <div class="desc">Stop after build validation, skip git push</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="skipDeploy">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Git Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📦</span>
+        <h2>Git Settings</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="gitBranch">Branch</label>
+            <input type="text" id="gitBranch" value="main">
+          </div>
+          <div class="form-group">
+            <label for="commitMessage">Commit Message</label>
+            <input type="text" id="commitMessage" value="chore: KageBunshin AI improvements">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🔧</span>
+        <h2>Advanced Settings</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tier1MaxLines">Tier 1 Max Lines</label>
+            <input type="number" id="tier1MaxLines" min="10" max="200" value="50">
+            <div class="hint">Files below this = simple (tier 1)</div>
+          </div>
+          <div class="form-group">
+            <label for="tier2MaxLines">Tier 2 Max Lines</label>
+            <input type="number" id="tier2MaxLines" min="50" max="1000" value="200">
+            <div class="hint">Files below this = medium (tier 2), else tier 3</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ignorePatterns">Ignore Patterns</label>
+          <textarea id="ignorePatterns" placeholder="*.test.ts&#10;**/*.spec.ts&#10;docs/**"></textarea>
+          <div class="hint">One glob pattern per line. Files matching these are skipped.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Server Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">🌐</span>
+        <h2>Server Settings</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="port">HTTP Port</label>
+            <input type="number" id="port" min="1024" max="65535" value="3456">
+          </div>
+          <div class="form-group">
+            <label for="kbApiKey">Server Auth Token (optional)</label>
+            <input type="password" id="kbApiKey" placeholder="Leave open for unauthenticated">
+            <div class="hint">Bearer token for MCP endpoint authentication</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card">
+      <div class="actions">
+        <button class="btn btn-danger" onclick="resetConfig()">Reset to Defaults</button>
+        <button class="btn btn-secondary" onclick="loadConfig()">Discard Changes</button>
+        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const API_BASE = window.location.origin + '/api/config';
+
+    // Load config on page load
+    document.addEventListener('DOMContentLoaded', loadConfig);
+
+    async function loadConfig() {
+      try {
+        const res = await fetch(API_BASE);
+        if (!res.ok) throw new Error('Failed to load config');
+        const config = await res.json();
+
+        // Populate form fields
+        document.getElementById('provider').value = config.provider || 'openrouter';
+        document.getElementById('model').value = config.model || '';
+        document.getElementById('apiKey').value = config.apiKey || '';
+        document.getElementById('baseUrl').value = config.baseUrl || '';
+        document.getElementById('maxConcurrentClones').value = config.maxConcurrentClones || 10;
+        document.getElementById('cloneTokenBudget').value = config.cloneTokenBudget || 30000;
+        document.getElementById('dryRunApproval').checked = config.dryRunApproval || false;
+        document.getElementById('skipDeploy').checked = config.skipDeploy || false;
+        document.getElementById('gitBranch').value = config.gitBranch || 'main';
+        document.getElementById('commitMessage').value = config.commitMessage || '';
+        document.getElementById('tier1MaxLines').value = config.tierThresholds?.tier1MaxLines || 50;
+        document.getElementById('tier2MaxLines').value = config.tierThresholds?.tier2MaxLines || 200;
+        document.getElementById('ignorePatterns').value = (config.ignorePatterns || []).join('\n');
+        document.getElementById('port').value = config.port || 3456;
+        document.getElementById('kbApiKey').value = config.kbApiKey || '';
+      } catch (err) {
+        showToast('Failed to load configuration', 'error');
+      }
+    }
+
+    async function saveConfig() {
+      const config = {
+        provider: document.getElementById('provider').value,
+        model: document.getElementById('model').value,
+        apiKey: document.getElementById('apiKey').value,
+        baseUrl: document.getElementById('baseUrl').value || undefined,
+        maxConcurrentClones: parseInt(document.getElementById('maxConcurrentClones').value),
+        cloneTokenBudget: parseInt(document.getElementById('cloneTokenBudget').value),
+        dryRunApproval: document.getElementById('dryRunApproval').checked,
+        skipDeploy: document.getElementById('skipDeploy').checked,
+        gitBranch: document.getElementById('gitBranch').value,
+        commitMessage: document.getElementById('commitMessage').value,
+        tierThresholds: {
+          tier1MaxLines: parseInt(document.getElementById('tier1MaxLines').value),
+          tier2MaxLines: parseInt(document.getElementById('tier2MaxLines').value),
+        },
+        ignorePatterns: document.getElementById('ignorePatterns').value
+          .split('\n')
+          .map(l => l.trim())
+          .filter(Boolean),
+        port: parseInt(document.getElementById('port').value),
+        kbApiKey: document.getElementById('kbApiKey').value || undefined,
+      };
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config),
+        });
+        if (!res.ok) throw new Error('Failed to save');
+        showToast('Configuration saved!', 'success');
+      } catch (err) {
+        showToast('Failed to save configuration', 'error');
+      }
+    }
+
+    async function resetConfig() {
+      if (!confirm('Reset all settings to defaults?')) return;
+
+      try {
+        const res = await fetch(API_BASE + '/reset', { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to reset');
+        await loadConfig();
+        showToast('Configuration reset to defaults', 'success');
+      } catch (err) {
+        showToast('Failed to reset configuration', 'error');
+      }
+    }
+
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast toast-${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

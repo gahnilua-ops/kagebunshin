@@ -1,7 +1,7 @@
 {
   "name": "kagebunshin-mcp",
   "version": "0.1.0",
-  "description": "Multi-agent AI code improvement pipeline — parallel file clones, dependency-aware execution, auto build/deploy",
+  "description": "Multi-agent AI code improvement pipeline \u2014 parallel file clones, dependency-aware execution, auto build/deploy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
@@ -11,7 +11,8 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "start": "node dist/index.js",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "mcp",
@@ -24,17 +25,14 @@
   "author": "Gahni (Isagani Goloso)",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.24.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "acorn": "^8.11.3",
     "acorn-walk": "^8.3.2",
-    "chalk": "^5.3.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^4.22.2",
     "glob": "^10.3.10",
     "minimatch": "^9.0.4",
-    "ora": "^8.0.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

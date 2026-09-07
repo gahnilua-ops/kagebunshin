@@ -51,7 +51,7 @@ export async function runKageBunshin(
         : `  [cluster-${batch[0].cluster}] ${batch.length} files (sequential)`;
     log(batchLabel);
 
-    if (batch.length === 1 || isIndependentBatch(batch, executionOrder)) {
+    if (batch.length === 1) {
       // True parallel
       const results = await Promise.all(
         batch.map((f) => {
@@ -100,7 +100,7 @@ export async function runKageBunshin(
     const file = allFiles.find((f) => f.path === report.file);
     if (!file) continue;
 
-    const budget = budgets.get(file.path) ?? new TokenBudget(config.cloneTokenBudget);
+    const budget = new TokenBudget(config.cloneTokenBudget);
     const diff = await cloneDryRun(file, report, config, budget);
     if (diff) diffs.push(diff);
   }
@@ -138,7 +138,7 @@ export async function runKageBunshin(
     const report = scanReports.get(diff.file);
     if (!file || !report) continue;
 
-    const budget = budgets.get(file.path) ?? new TokenBudget(config.cloneTokenBudget);
+    const budget = new TokenBudget(config.cloneTokenBudget);
     const result = await cloneExecute(file, report, config, budget);
 
     if (result.success && result.linesChanged.length > 0) {
@@ -224,12 +224,7 @@ function tierSummary(files: ProjectFile[]): string {
   return `T1:${counts[0]} T2:${counts[1]} T3:${counts[2]}`;
 }
 
-function isIndependentBatch(
-  batch: ProjectFile[],
-  allBatches: ProjectFile[][]
-): boolean {
-  return allBatches[0] === batch;
-}
+// isIndependentBatch removed — batch.length === 1 is the correct check
 
 async function askApproval(question: string): Promise<boolean> {
   const rl = readline.createInterface({

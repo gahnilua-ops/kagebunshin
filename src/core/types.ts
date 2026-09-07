@@ -71,9 +71,17 @@ export interface DeployResult {
   gitOutput: string;
 }
 
+export type ProviderName = "openrouter" | "groq" | "nvidia" | "opencode";
+
 export interface KageBunshinConfig {
   projectRoot: string;
-  anthropicApiKey: string;
+  /** API provider to use */
+  provider: ProviderName;
+  /** API key for the selected provider */
+  apiKey: string;
+  /** Custom base URL override (optional) */
+  baseUrl?: string;
+  /** Model ID to use (provider-specific) */
   model: string;
   maxConcurrentClones: number;
   cloneTokenBudget: number;    // per-clone (per-file) token ceiling to cap runaway API spend

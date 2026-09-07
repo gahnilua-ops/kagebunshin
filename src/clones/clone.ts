@@ -1,9 +1,8 @@
 // ============================================================
 // KageBunshin MCP — The Clone
-// One Claude instance per file — scan, report, or execute
+// One LLM instance per file — scan, report, or execute
 // ============================================================
 
-import Anthropic from "@anthropic-ai/sdk";
 import * as fs from "fs";
 import * as crypto from "crypto";
 import {
@@ -15,14 +14,89 @@ import {
   Suggestion,
 } from "../core/types";
 import { TokenBudget, estimateInputTokens } from "../core/token-budget";
-
-const client = new Anthropic();
+import { LLMProvider } from "../providers";
+import { createProvider } from "../providers/factory";
 
 // Per-phase response token ceilings - mirror the max_tokens sent to the API,
 // used to estimate whether a call would breach the per-clone token budget.
 const SCAN_MAX_OUTPUT = 1024;
 const DRYRUN_MAX_OUTPUT = 4096;
 const EXECUTE_MAX_OUTPUT = 4096;
+
+// ── CONCURRENCY LIMITER ──────────────────────────────────────
+// Prevents rate-limit errors when running many clones in parallel.
+class Semaphore {
+  private queue: (() => void)[] = [];
+  private running = 0;
+
+  constructor(private readonly max: number) {}
+
+  async acquire(): Promise<void> {
+    if (this.running < this.max) {
+      this.running++;
+      return;
+    }
+    return new Promise<void>((resolve) => {
+      this.queue.push(resolve);
+    });
+  }
+
+  release(): void {
+    this.running--;
+    if (this.queue.length > 0) {
+      this.running++;
+      this.queue.shift()!();
+    }
+  }
+}
+
+const apiSemaphore = new Semaphore(8); // Max 8 concurrent API calls
+
+// Retry with exponential backoff for transient errors
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelayMs = 1000
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      lastError = err;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      const isRetryable =
+        errMsg.includes("429") || // Rate limit
+        errMsg.includes("500") || // Server error
+        errMsg.includes("502") ||
+        errMsg.includes("503") ||
+        errMsg.includes("ECONNRESET") ||
+        errMsg.includes("ETIMEDOUT");
+
+      if (!isRetryable || attempt === maxRetries) throw err;
+
+      // Exponential backoff with jitter
+      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+      console.warn(`[Clone] Retryable error (attempt ${attempt + 1}/${maxRetries + 1}), waiting ${Math.round(delay)}ms...`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastError;
+}
+
+// ── PROVIDER INSTANCE ────────────────────────────────────────
+// Lazily initialized provider from config
+let cachedProvider: LLMProvider | null = null;
+
+function getProvider(config: KageBunshinConfig): LLMProvider {
+  if (!cachedProvider || cachedProvider.name !== config.provider) {
+    cachedProvider = createProvider(config.provider, {
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl,
+    });
+  }
+  return cachedProvider;
+}
 
 // ── PHASE 1: SCAN ─────────────────────────────────────────
 export async function cloneScan(
@@ -45,17 +119,22 @@ export async function cloneScan(
   }
 
   const prompt = buildScanPrompt(file, content);
+  const provider = getProvider(config);
 
   try {
-    const response = await client.messages.create({
-      model: config.model,
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+    const response = await withRetry(async () => {
+      await apiSemaphore.acquire();
+      try {
+        return await provider.chat(config.model, [
+          { role: "user", content: prompt },
+        ], 1024);
+      } finally {
+        apiSemaphore.release();
+      }
     });
 
-    const text = extractText(response);
-    const parsed = parseScanResponse(text);
-    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
+    const parsed = parseScanResponse(response.content);
+    budget.spend(response.usage.totalTokens);
 
     return {
       cloneId,
@@ -64,7 +143,7 @@ export async function cloneScan(
       issues: parsed.issues,
       suggestions: parsed.suggestions,
       confidence: parsed.confidence,
-      tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
+      tokensUsed: response.usage.totalTokens,
       durationMs: Date.now() - start,
     };
   } catch (err) {
@@ -90,20 +169,25 @@ export async function cloneDryRun(
   }
 
   const prompt = buildExecutePrompt(file, content, report, true);
+  const provider = getProvider(config);
 
   try {
-    const response = await client.messages.create({
-      model: config.model,
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+    const response = await withRetry(async () => {
+      await apiSemaphore.acquire();
+      try {
+        return await provider.chat(config.model, [
+          { role: "user", content: prompt },
+        ], 4096);
+      } finally {
+        apiSemaphore.release();
+      }
     });
 
-    const text = extractText(response);
-    const proposed = extractCodeBlock(text);
+    const proposed = extractCodeBlock(response.content);
 
     if (!proposed || proposed.trim() === content.trim()) return null;
 
-    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
+    budget.spend(response.usage.totalTokens);
 
     return {
       cloneId: report.cloneId,
@@ -136,16 +220,21 @@ export async function cloneExecute(
   }
 
   const prompt = buildExecutePrompt(file, content, report, false);
+  const provider = getProvider(config);
 
   try {
-    const response = await client.messages.create({
-      model: config.model,
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+    const response = await withRetry(async () => {
+      await apiSemaphore.acquire();
+      try {
+        return await provider.chat(config.model, [
+          { role: "user", content: prompt },
+        ], 4096);
+      } finally {
+        apiSemaphore.release();
+      }
     });
 
-    const text = extractText(response);
-    const newContent = extractCodeBlock(text);
+    const newContent = extractCodeBlock(response.content);
 
     if (!newContent || newContent.trim() === content.trim()) {
       return { success: true, linesChanged: [] };
@@ -157,7 +246,7 @@ export async function cloneExecute(
     // Write improved version
     fs.writeFileSync(file.absPath, newContent, "utf-8");
 
-    budget.spend(response.usage.input_tokens + response.usage.output_tokens);
+    budget.spend(response.usage.totalTokens);
 
     const changed = diffLines(content, newContent);
     return { success: true, linesChanged: changed };
@@ -260,13 +349,6 @@ function tryRead(absPath: string): string | null {
   } catch {
     return null;
   }
-}
-
-function extractText(response: Anthropic.Message): string {
-  return response.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as Anthropic.TextBlock).text)
-    .join("");
 }
 
 function extractCodeBlock(text: string): string | null {
