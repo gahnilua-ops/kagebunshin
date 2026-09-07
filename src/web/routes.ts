@@ -147,7 +147,7 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
       const port = configStore.get("port") || 3456;
       const myPid = process.pid;
 
-      // Kill whatever is on the port (old server), then start fresh
+      // Kill whatever is on the port
       try {
         const pids = execSync(`lsof -ti:${port}`, { encoding: "utf-8" })
           .trim().split("\n").filter(Boolean);
@@ -158,11 +158,8 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
         }
       } catch {}
 
-      // Also kill our own process group children
-      try { process.kill(-myPid, "SIGKILL"); } catch {}
-
-      // Small delay to let port free up
-      setTimeout(() => {
+      // Wait until port is free, then start immediately
+      const startServer = () => {
         const child = spawn(process.execPath, process.argv.slice(1), {
           cwd: process.cwd(),
           detached: true,
@@ -170,11 +167,24 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
         });
         child.unref();
         console.log("[KageBunshin] Restarted with PID:", child.pid);
-
-        // Exit current process
         process.exit(0);
-      }, 500);
-    }, 300);
+      };
+
+      // Poll for port to be free (max 2s, check every 50ms)
+      let waited = 0;
+      const poll = setInterval(() => {
+        waited += 50;
+        try {
+          execSync(`lsof -ti:${port}`, { encoding: "utf-8" });
+          // Port still in use, keep waiting
+          if (waited >= 2000) { clearInterval(poll); startServer(); }
+        } catch {
+          // Port is free — start immediately
+          clearInterval(poll);
+          startServer();
+        }
+      }, 50);
+    }, 200);
   });
 
   // Serve the configuration HTML page (must be last - catch-all)
