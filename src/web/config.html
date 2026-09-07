@@ -233,6 +233,10 @@
     .restart-log .info{color:var(--accent-light)}
     .restart-status{font-size:.85rem;color:var(--text-2);margin-bottom:.5rem}
 
+  
+    @keyframes thinking{0%,100%{opacity:1}50%{opacity:.3}}
+    .thinking{animation:thinking 1.2s ease-in-out infinite;display:inline-block}
+
   </style>
 </head>
 <body>
@@ -704,7 +708,7 @@
 
       // Show loading
       const loadingId = 'loading-' + Date.now();
-      addChatMsg('assistant', '<span id="'+loadingId+'">⏳ Thinking...</span>');
+      addChatMsg('assistant', '<span id="'+loadingId+'"><span class="thinking">⏳</span> Thinking<span class="thinking">...</span></span>');
 
       try{
         console.log('[Chat] Sending to', prov, (document.getElementById('model').value || MODELS[prov]));
