@@ -699,7 +699,12 @@
       document.getElementById('chat-info').textContent = prov + ' / ' + (document.getElementById('model').value || MODELS[prov]);
       document.getElementById('chat-send').disabled = true;
 
+      // Show loading
+      const loadingId = 'loading-' + Date.now();
+      addChatMsg('assistant', '<span id="'+loadingId+'">⏳ Thinking...</span>');
+
       try{
+        console.log('[Chat] Sending to', prov, (document.getElementById('model').value || MODELS[prov]));
         const r = await fetch('/api/chat', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -711,14 +716,19 @@
             baseUrl: document.getElementById('baseUrl').value || undefined,
           })
         });
+        console.log('[Chat] Status:', r.status);
         const data = await r.json();
+        console.log('[Chat] Response:', data);
+        // Remove loading message
+        const loadingEl = document.getElementById(loadingId);
+        if(loadingEl) loadingEl.closest('.chat-msg').remove();
         if(!r.ok) throw data;
 
         chatMessages.push({role:'assistant', content:data.content});
         addChatMsg('assistant', data.content, data.usage);
       }catch(e){
         const err = e.error || e.message || 'Unknown error';
-        addChatMsg('error', 'Error: ' + err);
+        addChatMsg('error', '❌ ' + (typeof err === 'string' ? err : JSON.stringify(err)));
       }
 
       document.getElementById('chat-send').disabled = false;
@@ -733,7 +743,9 @@
 
       const div = document.createElement('div');
       div.className = 'chat-msg ' + role;
-      div.textContent = content;
+      // Use innerHTML for error messages to support formatting
+      if(role === 'error') div.innerHTML = content.replace(/\n/g, '<br>');
+      else div.textContent = content;
 
       if(usage && role === 'assistant'){
         const meta = document.createElement('div');
