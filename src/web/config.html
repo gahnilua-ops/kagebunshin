@@ -378,7 +378,7 @@
           </div>
         </div>
         <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="Type a message to test..." onkeydown="if(event.key==='Enter')sendChat()">
+          <input type="text" id="chat-input" placeholder="Type a message to test..." onkeydown="if(event.key==='Enter')sendChat()" onfocus="if(!chatOpen)toggleChat()">
           <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
         </div>
       </div>
@@ -669,6 +669,9 @@
     }
 
     async function sendChat(){
+      // Auto-open if collapsed
+      if(!chatOpen) toggleChat();
+
       const input = document.getElementById('chat-input');
       const msg = input.value.trim();
       if(!msg) return;
