@@ -733,6 +733,11 @@
 
         chatMessages.push({role:'assistant', content:data.content});
         addChatMsg('assistant', data.content, data.usage);
+        // If fallback was used, update the model field
+        if(data.fallback && data.model){
+          document.getElementById('model').value = data.model;
+          addChatMsg('error', '⚡ Switched to working model: ' + data.model);
+        }
       }catch(e){
         const err = e.error || e.message || 'Unknown error';
         addChatMsg('error', '❌ ' + (typeof err === 'string' ? err : JSON.stringify(err)));
