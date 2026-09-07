@@ -4,7 +4,20 @@
 
 A multi-agent AI code improvement pipeline inspired by Naruto's **Shadow Clone Jutsu**.
 
-KageBunshin deploys one Claude AI "clone" per file in your project — each clone scans, analyzes, and improves its assigned file in parallel. When done, all knowledge flows back to the original, which validates, builds, and deploys.
+KageBunshin deploys one AI "clone" per file in your project — each clone scans, analyzes, and improves its assigned file in parallel. Supports **OpenRouter, Groq, NVIDIA NIM, and OpenCode** providers with automatic model fallback.
+
+---
+
+## ✨ Features
+
+- **Multi-provider support** — OpenRouter, Groq, NVIDIA NIM, OpenCode
+- **Automatic model fallback** — tries 18+ free models when primary fails
+- **Web config UI** — premium 3D glassmorphism dashboard at `http://localhost:3456/`
+- **Built-in chat** — test providers and models directly from the UI
+- **Dependency-aware parallelism** — safe concurrent execution
+- **Auto-recovery** — build failures traced and auto-restored
+- **Token budget control** — per-file API spend caps
+- **Rate limiting** — semaphore + retry with exponential backoff
 
 ---
 
@@ -13,32 +26,24 @@ KageBunshin deploys one Claude AI "clone" per file in your project — each clon
 ```
 Phase 0 — Dependency Graph
   Scans all files, maps imports, assigns dependency clusters
-  Files that import each other → sequential (safe)
-  Independent files → true parallel (fast)
 
 Phase 1 — SCAN (Clone Deployment)
   One AI clone per file analyzes issues and suggestions
-  Parallel where safe, sequential within clusters
 
 Phase 2 — SYNTHESIZE
   Original gains all clone knowledge
-  Builds full project improvement picture
 
 Phase 3 — DRY RUN
   Clones generate proposed diffs without writing anything
-  Optional: pause for human approval
 
 Phase 4 — EXECUTE
-  Clones apply improvements
-  .bak backups created before any write
+  Clones apply improvements (with .bak backups)
 
 Phase 5 — BUILD VALIDATE
-  npm run build
-  If fails → blame map traces culprit files → auto-restore → retry
+  npm run build → blame map → auto-restore on failure → retry
 
 Phase 6 — DEPLOY
   git add -A && git commit && git push
-  vercel --prod
 ```
 
 ---
@@ -46,8 +51,8 @@ Phase 6 — DEPLOY
 ## Install
 
 ```bash
-git clone https://github.com/yourusername/kagebunshin-mcp
-cd kagebunshin-mcp
+git clone https://github.com/gahnilua-ops/kagebunshin
+cd kagebunshin
 npm install
 npm run build
 ```
@@ -56,66 +61,79 @@ npm run build
 
 ## Usage
 
+### Web Config UI (recommended)
+
+```bash
+# Start the server
+node dist/index.js server
+
+# Open in browser
+open http://localhost:3456/
+```
+
+The dashboard lets you:
+- Select provider (OpenRouter, Groq, NVIDIA, OpenCode)
+- Set API key and model
+- Configure pipeline settings
+- Test providers with built-in chat
+- Restart the server
+- Export/import configuration
+
 ### CLI Mode
 
 ```bash
-# Full pipeline (scan → improve → build → deploy)
-ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project
+# Full pipeline
+OPENROUTER_API_KEY=sk-... node dist/index.js /path/to/project
 
-# Scan only — no changes made
-ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --scan-only
+# Scan only
+OPENROUTER_API_KEY=sk-... node dist/index.js /path/to/project --scan-only
 
-# Stop after build, skip git/vercel
-ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --skip-deploy
-
-# Skip approval prompt
-ANTHROPIC_API_KEY=sk-... node dist/index.js /path/to/your/project --no-approval
+# With specific provider
+OPENROUTER_API_KEY=sk-... node dist/index.js /path/to/project --provider groq --model llama-3.3-70b-versatile
 ```
 
-### HTTP Server Mode (Streamable HTTP — for Kai 9000 and remote MCP clients)
+### MCP Server Mode (stdio)
 
 ```bash
-# Copy and fill env
-cp .env.example .env
-
-# Start the server (default port 3456)
-ANTHROPIC_API_KEY=sk-... node dist/index.js
+MCP_STDIO=1 OPENROUTER_API_KEY=sk-... node dist/index.js
 ```
 
-Add to your Kai 9000 MCP config:
+### HTTP Server Mode (for MCP clients)
+
+```bash
+node dist/index.js server
+```
+
+Add to your MCP config:
 ```json
 {
   "mcpServers": {
     "kagebunshin": {
-      "url": "http://localhost:3456/mcp",
-      "headers": {
-        "Authorization": "Bearer your-secret-token-here"
-      }
+      "url": "http://localhost:3456/mcp"
     }
   }
 }
 ```
 
-**Deploy remotely** (Railway, Render, any VPS):
-```bash
-# Set env vars on your host:
-# ANTHROPIC_API_KEY, PORT, KB_API_KEY
-# Then point Kai 9000 at:
-# https://your-host.railway.app/mcp
-```
+---
 
-### stdio Mode (for Claude Desktop / local MCP)
+## Providers
 
-```bash
-MCP_STDIO=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
-```
+| Provider | Base URL | Free Models |
+|---|---|---|
+| OpenRouter | `openrouter.ai/api/v1` | ✅ 18+ free models |
+| Groq | `api.groq.com/openai/v1` | ✅ Free tier |
+| NVIDIA NIM | `integrate.api.nvidia.com/v1` | ✅ Free tier |
+| OpenCode | `opencode.ai/zen/go/v1` | ✅ Free tier |
 
-### Available MCP Tools
+### Recommended Free Models (OpenRouter)
 
-| Tool | Description |
+| Model | Best For |
 |---|---|
-| `kagebunshin_run` | Full pipeline: scan → improve → build → deploy |
-| `kagebunshin_scan` | Scan only — report issues without making changes |
+| `google/gemma-4-31b-it:free` | General coding |
+| `nvidia/nemotron-3-super-120b-a12b:free` | Complex tasks |
+| `cohere/north-mini-code:free` | Code-specific |
+| `minimax/minimax-m3:free` | Balanced |
 
 ---
 
@@ -123,13 +141,26 @@ MCP_STDIO=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
 
 | Option | Default | Description |
 |---|---|---|
-| `projectRoot` | required | Absolute path to project |
-| `dryRunApproval` | `true` | Pause for approval before writing |
-| `skipDeploy` | `false` | Stop after build validation |
-| `gitBranch` | `"main"` | Branch to push to |
-| `commitMessage` | auto | Git commit message |
-| `maxConcurrentClones` | `10` | Max parallel API calls |
-| `ignorePatterns` | `[]` | Additional glob ignore patterns |
+| `provider` | `openrouter` | AI provider |
+| `model` | `meta-llama/llama-3.1-8b-instruct` | Model ID |
+| `apiKey` | — | Provider API key |
+| `projectRoot` | `cwd` | Project directory |
+| `maxConcurrentClones` | `10` | Parallel API calls |
+| `cloneTokenBudget` | `30000` | Per-file token cap |
+| `dryRunApproval` | `false` | Pause before execute |
+| `skipDeploy` | `false` | Stop after build |
+| `gitBranch` | `main` | Push branch |
+
+### Environment Variables
+
+```bash
+OPENROUTER_API_KEY=sk-or-...   # OpenRouter
+GROQ_API_KEY=gsk_...           # Groq
+NVIDIA_API_KEY=nvapi-...       # NVIDIA
+OPENCODE_API_KEY=...           # OpenCode
+KB_API_KEY=...                 # Server auth token
+PORT=3456                      # HTTP port
+```
 
 ---
 
@@ -140,7 +171,9 @@ MCP_STDIO=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
 - **Dry run first** — all diffs previewed before any file is touched
 - **Backup on write** — every modified file gets a `.bak` before overwrite
 - **Blame tracking** — build failures traced to specific clones, auto-restored
-- **Human approval gate** — optional pause before execution
+- **Token budget** — per-file API spend caps prevent runaway costs
+- **Rate limiting** — semaphore + retry with exponential backoff
+- **Model fallback** — auto-tries working models when primary fails
 
 ---
 
@@ -149,14 +182,23 @@ MCP_STDIO=1 ANTHROPIC_API_KEY=sk-... node dist/index.js
 ```
 src/
 ├── core/
-│   ├── types.ts              # All TypeScript interfaces
+│   ├── types.ts              # TypeScript interfaces
+│   ├── config-store.ts       # JSON config persistence
 │   ├── dependency-graph.ts   # Import scanner + cluster builder
-│   └── orchestrator.ts       # The Original — controls all phases
+│   ├── orchestrator.ts       # The Original — controls all phases
+│   └── token-budget.ts       # Per-clone token caps
 ├── clones/
 │   └── clone.ts              # The Clone — scan, dry run, execute
+├── providers/
+│   ├── index.ts              # LLMProvider interface
+│   ├── base.ts               # OpenAI-compatible HTTP client
+│   └── factory.ts            # Provider factory + model lists
 ├── phases/
 │   ├── build.ts              # npm run build + blame parser
-│   └── deploy.ts             # git push + vercel --prod
+│   └── deploy.ts             # git commit + push
+├── web/
+│   ├── config.html           # Web config dashboard
+│   └── routes.ts             # Express routes + API
 └── index.ts                  # MCP server + CLI entry point
 ```
 
@@ -167,8 +209,7 @@ src/
 - Node.js 18+
 - `npm run build` script in target project
 - `git` CLI installed
-- `vercel` CLI installed (for deploy phase)
-- Anthropic API key
+- Provider API key (OpenRouter, Groq, NVIDIA, or OpenCode)
 
 ---
 
@@ -184,4 +225,3 @@ Developer [PH]
 ## License
 
 MIT
-
