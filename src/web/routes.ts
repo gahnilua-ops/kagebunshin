@@ -120,21 +120,41 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
 
   // POST /api/restart — Restart the KageBunshin server
   router.post("/api/restart", (_req: Request, res: Response) => {
-    // Send response first, then restart
     res.json({ success: true, message: "Server restarting..." });
 
-    // Give time for the response to be sent, then restart
+    const { spawn, execSync } = require("child_process");
+
     setTimeout(() => {
-      // Spawn new process detached
-      const child = require("child_process").spawn(
-        process.execPath,
-        process.argv.slice(1),
-        { cwd: process.cwd(), detached: true, stdio: "ignore" }
-      );
-      child.unref();
-      console.log("[KageBunshin] Restarting... new PID:", child.pid);
-      // Exit current process
-      process.exit(0);
+      const port = configStore.get("port") || 3456;
+      const myPid = process.pid;
+
+      // Kill whatever is on the port (old server), then start fresh
+      try {
+        const pids = execSync(`lsof -ti:${port}`, { encoding: "utf-8" })
+          .trim().split("\n").filter(Boolean);
+        for (const pid of pids) {
+          if (pid !== String(myPid)) {
+            try { process.kill(Number(pid), "SIGKILL"); } catch {}
+          }
+        }
+      } catch {}
+
+      // Also kill our own process group children
+      try { process.kill(-myPid, "SIGKILL"); } catch {}
+
+      // Small delay to let port free up
+      setTimeout(() => {
+        const child = spawn(process.execPath, process.argv.slice(1), {
+          cwd: process.cwd(),
+          detached: true,
+          stdio: "ignore",
+        });
+        child.unref();
+        console.log("[KageBunshin] Restarted with PID:", child.pid);
+
+        // Exit current process
+        process.exit(0);
+      }, 500);
     }, 300);
   });
 
