@@ -8,6 +8,9 @@ import * as path from "path";
 import { ProviderName } from "./types";
 
 export interface StoredConfig {
+  // Workspace
+  projectRoot: string;
+
   // Provider settings
   provider: ProviderName;
   model: string;
@@ -37,6 +40,7 @@ export interface StoredConfig {
 }
 
 const DEFAULT_STORED_CONFIG: StoredConfig = {
+  projectRoot: process.cwd(),
   provider: "openrouter",
   model: "anthropic/claude-sonnet-4",
   apiKey: "",

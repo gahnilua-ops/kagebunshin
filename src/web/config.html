@@ -1,468 +1,396 @@
-<!DOCTYPE html>
+
+  <!-- Restart Overlay -->
+  <div class="restart-overlay" id="restart-overlay">
+    <div class="restart-modal">
+      <div class="restart-spinner" id="restart-spinner"></div>
+      <h3 id="restart-title">Restarting Server</h3>
+      <div class="restart-status" id="restart-status">Killing current process...</div>
+      <div class="restart-log" id="restart-log"></div>
+    </div>
+  </div>
+
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KageBunshin MCP — Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface-hover: #1c2333;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-hover: #79c0ff;
-      --green: #3fb950;
-      --red: #f85149;
-      --orange: #d29922;
+      --bg: #030014;
+      --surface: rgba(255,255,255,0.035);
+      --glass: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-hover: rgba(255,255,255,0.07);
+      --text: #f0f0f5;
+      --text-2: #8888aa;
+      --text-3: #555577;
+      --accent: #6c5ce7;
+      --accent-glow: rgba(108,92,231,0.4);
+      --accent-light: #a29bfe;
+      --green: #00d2a0;
+      --green-glow: rgba(0,210,160,0.3);
+      --red: #ff6b6b;
+      --orange: #ffa502;
+      --border: rgba(255,255,255,0.06);
+      --radius: 16px;
+      --radius-sm: 10px;
     }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ═══ BG ═══ */
+    .bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+    .orb{position:absolute;border-radius:50%;filter:blur(120px);animation:float 25s ease-in-out infinite}
+    .o1{width:700px;height:700px;background:radial-gradient(circle,rgba(108,92,231,0.18),transparent 70%);top:-250px;left:-150px}
+    .o2{width:600px;height:600px;background:radial-gradient(circle,rgba(0,210,160,0.12),transparent 70%);bottom:-250px;right:-150px;animation-delay:-8s}
+    .o3{width:500px;height:500px;background:radial-gradient(circle,rgba(108,92,231,0.08),transparent 70%);top:40%;left:60%;animation-delay:-16s}
+    .o4{width:350px;height:350px;background:radial-gradient(circle,rgba(0,210,160,0.06),transparent 70%);top:20%;left:10%;animation-delay:-4s}
+    @keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-50px) scale(1.08)}66%{transform:translate(-30px,30px) scale(0.92)}}
+    .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at center,black 20%,transparent 70%)}
+    .particles{position:absolute;inset:0}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-    }
+    /* ═══ PAGE ═══ */
+    .page{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
 
-    .header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    /* ═══ HEADER ═══ */
+    .hdr{padding:1.25rem 2.5rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);background:rgba(3,0,20,0.7);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:0.75rem}
+    .logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--green));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 4px 20px var(--accent-glow);transition:transform .3s}
+    .logo-icon:hover{transform:perspective(200px) rotateY(15deg) scale(1.05)}
+    .logo-t{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+    .logo-t span{background:linear-gradient(135deg,var(--accent-light),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hdr-r{display:flex;align-items:center;gap:1.25rem}
+    .live{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--text-2)}
+    .live::before{content:'';width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 12px var(--green-glow);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+    .ver{padding:.2rem .65rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;font-size:.7rem;font-weight:500;color:var(--text-2);font-family:'JetBrains Mono',monospace}
+    .kbd{padding:.2rem .5rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:6px;font-size:.65rem;color:var(--text-3);font-family:'JetBrains Mono',monospace}
+    .kbd kbd{background:rgba(255,255,255,0.08);padding:.1rem .35rem;border-radius:3px;font-size:.6rem}
 
-    .header h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-    }
+    /* ═══ MAIN ═══ */
+    .main{flex:1;max-width:1000px;width:100%;margin:0 auto;padding:2rem 2rem 7rem}
 
-    .header h1 span { color: var(--accent); }
+    /* ═══ HERO ═══ */
+    .hero{text-align:center;margin-bottom:3rem;animation:fadeUp .7s ease-out}
+    .hero-badge{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem 1rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:100px;font-size:.72rem;font-weight:600;color:var(--accent-light);margin-bottom:1rem;letter-spacing:.03em;text-transform:uppercase}
+    .hero-badge .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+    .hero h1{font-size:3.2rem;font-weight:900;letter-spacing:-.04em;line-height:1.1;margin-bottom:.75rem}
+    .hero h1 .g{background:linear-gradient(135deg,#6c5ce7,#a29bfe,#00d2a0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero .sub{font-size:1.15rem;color:var(--text-2);max-width:560px;margin:0 auto;line-height:1.6}
+    .hero .stats{display:flex;justify-content:center;gap:2.5rem;margin-top:1.75rem}
+    .hero .stat{text-align:center}
+    .hero .stat .val{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent-light),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero .stat .lbl{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem}
 
-    .header .version {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-    }
+    /* ═══ PIPELINE VIS ═══ */
+    .pipeline{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:2.5rem;animation:fadeUp .7s ease-out .1s both;flex-wrap:wrap}
+    .pipe-step{display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:100px;font-size:.75rem;font-weight:600;color:var(--text-2);transition:all .3s;cursor:default}
+    .pipe-step:hover{border-color:var(--accent);color:var(--accent-light);box-shadow:0 0 20px var(--accent-glow)}
+    .pipe-step .num{width:22px;height:22px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:white;font-weight:700}
+    .pipe-arrow{color:var(--text-3);font-size:1rem;margin:0 .25rem}
 
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1.5rem;
-    }
+    /* ═══ PROVIDER GRID ═══ */
+    .prov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:2rem;animation:fadeUp .7s ease-out .15s both}
+    .prov{position:relative;padding:1.1rem .75rem;background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-sm);cursor:pointer;transition:all .3s cubic-bezier(.23,1,.32,1);text-align:center;overflow:hidden}
+    .prov::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(108,92,231,0.12),transparent);opacity:0;transition:opacity .3s}
+    .prov:hover::before,.prov.on::before{opacity:1}
+    .prov:hover{border-color:rgba(108,92,231,0.35);transform:translateY(-3px) scale(1.02);box-shadow:0 12px 30px -10px rgba(108,92,231,0.3)}
+    .prov.on{border-color:var(--accent);box-shadow:0 0 25px var(--accent-glow),0 12px 35px -10px rgba(108,92,231,0.35)}
+    .prov .ic{font-size:1.8rem;margin-bottom:.4rem;position:relative}
+    .prov .nm{font-size:.8rem;font-weight:600;position:relative}
+    .prov .tg{display:inline-block;font-size:.55rem;padding:.1rem .4rem;border-radius:4px;margin-top:.35rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;position:relative}
+    .prov .tg.rec{background:rgba(0,210,160,0.15);color:var(--green)}
+    .prov .tg.fast{background:rgba(255,165,2,0.15);color:var(--orange)}
+    .prov .tg.new{background:rgba(108,92,231,0.15);color:var(--accent-light)}
+    .prov .tg.gpu{background:rgba(0,210,160,0.1);color:#4ecdc4}
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      overflow: hidden;
-    }
+    /* ═══ CARDS ═══ */
+    .card{background:linear-gradient(145deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));border:1px solid var(--glass-border);border-radius:var(--radius);margin-bottom:1.1rem;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 25px 60px -15px rgba(0,0,0,0.5),0 0 40px rgba(108,92,231,0.05);transform:perspective(1000px) rotateX(0) rotateY(0);transition:all .4s cubic-bezier(.23,1,.32,1);animation:fadeUp .6s ease-out both}
+    .card:nth-child(1){animation-delay:.2s}.card:nth-child(2){animation-delay:.25s}.card:nth-child(3){animation-delay:.3s}.card:nth-child(4){animation-delay:.35s}.card:nth-child(5){animation-delay:.4s}
+    .card:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 35px 80px -20px rgba(0,0,0,0.6),0 0 60px rgba(108,92,231,0.06)}
+    .card-h{padding:1.15rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+    .card-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;background:var(--glass);border:1px solid var(--glass-border);transition:transform .3s}
+    .card:hover .card-ic{transform:scale(1.1) rotate(-3deg)}
+    .card-h h2{font-size:.9rem;font-weight:600;letter-spacing:-.01em;flex:1}
+    .card-h .badge{padding:.15rem .5rem;background:rgba(0,210,160,0.1);color:var(--green);border-radius:6px;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    .card-b{padding:1.5rem}
 
-    .card-header {
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+    /* ═══ FORM ═══ */
+    .fg{margin-bottom:1.25rem}
+    .fg:last-child{margin-bottom:0}
+    .fg label{display:block;font-size:.75rem;font-weight:700;margin-bottom:.5rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+    .fg .hint{font-size:.72rem;color:var(--text-3);margin-top:.4rem;line-height:1.4}
+    .fr{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+    input[type="text"],input[type="number"],input[type="password"],select,textarea{width:100%;padding:.7rem 1rem;background:rgba(0,0,0,0.35);border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--text);font-size:.88rem;font-family:'Inter',sans-serif;transition:all .25s;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow),inset 0 0 30px rgba(108,92,231,0.04)}
+    input::placeholder,textarea::placeholder{color:var(--text-3)}
+    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238888aa'%3E%3Cpath d='M6 8.5L1 3.5h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2.5rem;cursor:pointer}
+    select option{background:#1a1a2e;color:var(--text)}
+    textarea{min-height:80px;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.5}
 
-    .card-header .icon { font-size: 1.25rem; }
+    /* ═══ TOGGLE ═══ */
+    .tr{display:flex;align-items:center;justify-content:space-between;padding:.9rem 0;border-bottom:1px solid var(--border)}
+    .tr:last-child{border-bottom:none}
+    .tl{font-size:.88rem;font-weight:500}
+    .tl .d{font-size:.72rem;color:var(--text-3);margin-top:.1rem}
+    .sw{position:relative;width:48px;height:26px;flex-shrink:0}
+    .sw input{opacity:0;width:0;height:0;position:absolute}
+    .sw .tk{position:absolute;inset:0;background:rgba(255,255,255,0.08);border-radius:13px;cursor:pointer;transition:all .3s cubic-bezier(.23,1,.32,1)}
+    .sw .tk::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:var(--text-2);border-radius:50%;transition:all .3s cubic-bezier(.23,1,.32,1);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+    .sw input:checked+.tk{background:var(--accent);box-shadow:0 0 18px var(--accent-glow)}
+    .sw input:checked+.tk::before{transform:translateX(22px);background:white}
 
-    .card-header h2 {
-      font-size: 1rem;
-      font-weight: 600;
-    }
+    .env{display:inline-block;padding:.12rem .4rem;background:rgba(255,165,2,0.08);color:var(--orange);border-radius:4px;font-size:.65rem;font-family:'JetBrains Mono',monospace;font-weight:500}
 
-    .card-body {
-      padding: 1.5rem;
-    }
+    /* ═══ TEST BTN ═══ */
+    .test-row{display:flex;align-items:center;gap:.75rem;margin-top:.75rem}
+    .btn-test{padding:.4rem .9rem;background:rgba(0,210,160,0.1);color:var(--green);border:1px solid rgba(0,210,160,0.25);border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+    .btn-test:hover{background:rgba(0,210,160,0.2);border-color:var(--green)}
+    .btn-test.loading{opacity:.6;pointer-events:none}
+    .test-result{font-size:.75rem;font-weight:500}
+    .test-result.ok{color:var(--green)}
+    .test-result.fail{color:var(--red)}
 
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
+    /* ═══ ACTIONS ═══ */
+    .acts{display:flex;gap:.75rem;padding:1.5rem;border-top:1px solid var(--border);justify-content:flex-end;align-items:center}
+    .acts .spacer{flex:1}
+    .acts .saved{font-size:.72rem;color:var(--text-3);font-family:'JetBrains Mono',monospace}
+    .btn{padding:.7rem 1.5rem;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;border:none;cursor:pointer;transition:all .25s cubic-bezier(.23,1,.32,1);font-family:'Inter',sans-serif;letter-spacing:-.01em;position:relative;overflow:hidden}
+    .btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity .25s}
+    .btn:hover::after{opacity:1}
+    .btn-p{background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;box-shadow:0 4px 18px var(--accent-glow)}
+    .btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--accent-glow)}
+    .btn-s{background:var(--glass);color:var(--text);border:1px solid var(--glass-border)}
+    .btn-s:hover{background:var(--glass-hover);border-color:rgba(255,255,255,0.15)}
+    .btn-d{background:transparent;color:var(--red);border:1px solid rgba(255,107,107,0.3)}
+    .btn-d:hover{background:rgba(255,107,107,0.1);border-color:var(--red)}
+    .btn-e{background:transparent;color:var(--text-2);border:1px solid var(--glass-border);font-size:.8rem;padding:.5rem 1rem}
+    .btn-e:hover{border-color:rgba(255,255,255,0.15);color:var(--text)}
 
-    .form-group:last-child { margin-bottom: 0; }
+    /* ═══ EXPORT MODAL ═══ */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center}
+    .modal-bg.show{display:flex}
+    .modal{background:var(--bg);border:1px solid var(--glass-border);border-radius:var(--radius);padding:2rem;max-width:500px;width:90%;box-shadow:0 30px 80px -20px rgba(0,0,0,0.8)}
+    .modal h3{font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+    .modal textarea{width:100%;min-height:200px;background:rgba(0,0,0,0.4);border:1px solid var(--glass-border);border-radius:8px;padding:1rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.75rem;resize:vertical}
+    .modal .modal-acts{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
 
-    .form-group label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
+    /* ═══ TOAST ═══ */
+    .toast{position:fixed;bottom:2rem;right:2rem;padding:.85rem 1.5rem;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;z-index:1000;opacity:0;transform:translateY(20px) scale(.95);transition:all .4s cubic-bezier(.23,1,.32,1);backdrop-filter:blur(20px);display:flex;align-items:center;gap:.5rem}
+    .toast.show{opacity:1;transform:translateY(0) scale(1)}
+    .toast.ok{background:rgba(0,210,160,0.12);color:var(--green);border:1px solid rgba(0,210,160,0.3);box-shadow:0 10px 40px -10px rgba(0,210,160,0.3)}
+    .toast.er{background:rgba(255,107,107,0.12);color:var(--red);border:1px solid rgba(255,107,107,0.3)}
+    .toast .ico{font-size:1.1rem}
 
-    .form-group .hint {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
 
-    input[type="text"],
-    input[type="number"],
-    input[type="password"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 0.875rem;
-      font-family: inherit;
-      transition: border-color 0.15s;
-    }
+    @media(max-width:768px){.prov-grid{grid-template-columns:repeat(2,1fr)}.fr{grid-template-columns:1fr}.hero h1{font-size:2.2rem}.main{padding:1.5rem 1rem}.hdr{padding:1rem 1.5rem}.pipeline{display:none}.hero .stats{gap:1.5rem}}
+  
+    /* ═══ CHAT ═══ */
+    .chat-card{position:fixed;bottom:0;left:0;right:0;z-index:50;max-height:55vh;display:flex;flex-direction:column;background:rgba(3,0,20,0.92);backdrop-filter:blur(30px);border-top:1px solid var(--glass-border);transform:translateY(calc(100% - 48px));transition:transform .4s cubic-bezier(.23,1,.32,1)}
+    .chat-card.open{transform:translateY(0)}
+    .chat-toggle{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1.5rem;cursor:pointer;border-bottom:1px solid var(--border);flex-shrink:0}
+    .chat-toggle:hover{background:rgba(255,255,255,0.02)}
+    .chat-toggle .left{display:flex;align-items:center;gap:.6rem;font-size:.85rem;font-weight:600}
+    .chat-toggle .left .ic{font-size:1.1rem}
+    .chat-toggle .right{display:flex;align-items:center;gap:.5rem}
+    .chat-toggle .chevron{font-size:.75rem;color:var(--text-3);transition:transform .3s}
+    .chat-card.open .chat-toggle .chevron{transform:rotate(180deg)}
+    .chat-info{font-size:.65rem;color:var(--text-3);font-family:'JetBrains Mono',monospace}
+    .chat-body{flex:1;overflow-y:auto;padding:1rem 1.5rem;display:flex;flex-direction:column;gap:.75rem;min-height:200px;max-height:45vh}
+    .chat-msg{max-width:80%;padding:.75rem 1rem;border-radius:12px;font-size:.85rem;line-height:1.5;animation:fadeUp .3s ease-out}
+    .chat-msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border-bottom-right-radius:4px}
+    .chat-msg.assistant{align-self:flex-start;background:var(--glass);border:1px solid var(--glass-border);border-bottom-left-radius:4px;color:var(--text)}
+    .chat-msg.error{align-self:flex-start;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.2);color:var(--red);font-size:.8rem}
+    .chat-msg .meta{font-size:.65rem;color:var(--text-3);margin-top:.4rem;font-family:'JetBrains Mono',monospace}
+    .chat-msg.user .meta{color:rgba(255,255,255,0.6)}
+    .chat-input-row{display:flex;gap:.5rem;padding:.75rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0}
+    .chat-input-row input{flex:1;padding:.6rem 1rem;background:rgba(0,0,0,0.35);border:1px solid var(--glass-border);border-radius:var(--radius-sm);color:var(--text);font-size:.88rem;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
+    .chat-input-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+    .chat-send{padding:.6rem 1.25rem;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border:none;border-radius:var(--radius-sm);font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+    .chat-send:hover{transform:translateY(-1px);box-shadow:0 4px 15px var(--accent-glow)}
+    .chat-send:disabled{opacity:.5;pointer-events:none}
+    .chat-welcome{text-align:center;padding:2rem;color:var(--text-3);font-size:.85rem}
+    .chat-welcome .big{font-size:2rem;margin-bottom:.5rem}
 
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+  
+    .btn-restart{padding:.35rem .75rem;background:rgba(255,165,2,0.1);color:var(--orange);border:1px solid rgba(255,165,2,0.25);border-radius:8px;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:.35rem}
+    .btn-restart:hover{background:rgba(255,165,2,0.2);border-color:var(--orange)}
+    .btn-restart:disabled{opacity:.5;pointer-events:none}
+    .restart-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);z-index:300;display:none;align-items:center;justify-content:center}
+    .restart-overlay.show{display:flex}
+    .restart-modal{background:var(--bg);border:1px solid var(--glass-border);border-radius:var(--radius);padding:2rem;max-width:420px;width:90%;text-align:center;box-shadow:0 30px 80px -20px rgba(0,0,0,0.8)}
+    .restart-modal h3{font-size:1.1rem;font-weight:700;margin-bottom:1rem}
+    .restart-spinner{width:48px;height:48px;border:3px solid var(--glass-border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.25rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .restart-log{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;margin-top:1rem;text-align:left;max-height:150px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.6;color:var(--text-2)}
+    .restart-log .ok{color:var(--green)}
+    .restart-log .err{color:var(--red)}
+    .restart-log .info{color:var(--accent-light)}
+    .restart-status{font-size:.85rem;color:var(--text-2);margin-bottom:.5rem}
 
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    select {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e'%3E%3Cpath d='M6 8.5L1 3.5h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      padding-right: 2rem;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .toggle-row:last-child { border-bottom: none; }
-
-    .toggle-label {
-      font-size: 0.875rem;
-    }
-
-    .toggle-label .desc {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .toggle {
-      position: relative;
-      width: 44px;
-      height: 24px;
-    }
-
-    .toggle input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .toggle .slider {
-      position: absolute;
-      inset: 0;
-      background: var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .toggle .slider::before {
-      content: '';
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      left: 3px;
-      top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-
-    .toggle input:checked + .slider { background: var(--accent); }
-    .toggle input:checked + .slider::before { transform: translateX(20px); }
-
-    .actions {
-      display: flex;
-      gap: 0.75rem;
-      padding: 1.5rem;
-      border-top: 1px solid var(--border);
-      justify-content: flex-end;
-    }
-
-    .btn {
-      padding: 0.5rem 1.25rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    .btn-primary:hover { background: var(--accent-hover); }
-
-    .btn-secondary {
-      background: var(--surface);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover { background: var(--surface-hover); }
-
-    .btn-danger {
-      background: transparent;
-      color: var(--red);
-      border-color: var(--red);
-    }
-
-    .btn-danger:hover { background: rgba(248, 81, 73, 0.1); }
-
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      z-index: 1000;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all 0.3s;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .toast-success {
-      background: var(--green);
-      color: white;
-    }
-
-    .toast-error {
-      background: var(--red);
-      color: white;
-    }
-
-    .provider-badge {
-      display: inline-block;
-      padding: 0.125rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      margin-left: 0.5rem;
-    }
-
-    .env-var {
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: var(--orange);
-      background: var(--bg);
-      padding: 0.125rem 0.375rem;
-      border-radius: 3px;
-    }
-
-    @media (max-width: 640px) {
-      .form-row { grid-template-columns: 1fr; }
-      .container { padding: 0 1rem; }
-    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>🍃 <span>KageBunshin</span> MCP Configuration</h1>
-    <span class="version">v0.2.0</span>
+  <div class="bg">
+    <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="orb o4"></div>
+    <div class="grid-bg"></div>
+    <div class="particles" id="particles"></div>
   </div>
 
-  <div class="container">
-    <!-- Provider Settings -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">🤖</span>
-        <h2>AI Provider</h2>
+  <div class="page">
+    <header class="hdr">
+      <div class="logo">
+        <div class="logo-icon">🍃</div>
+        <div class="logo-t"><span>KageBunshin</span> MCP</div>
       </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="provider">Provider</label>
-            <select id="provider">
-              <option value="openrouter">OpenRouter</option>
-              <option value="groq">Groq</option>
-              <option value="nvidia">NVIDIA NIM</option>
-              <option value="opencode">OpenCode</option>
-            </select>
-            <div class="hint">All providers use OpenAI-compatible chat completions API</div>
-          </div>
-          <div class="form-group">
-            <label for="model">Model</label>
-            <input type="text" id="model" placeholder="anthropic/claude-sonnet-4">
-            <div class="hint">Provider-specific model ID</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="apiKey">API Key</label>
-          <input type="password" id="apiKey" placeholder="sk-...">
-          <div class="hint">
-            Or set via environment variable:
-            <span class="env-var">OPENROUTER_API_KEY</span>
-            <span class="env-var">GROQ_API_KEY</span>
-            <span class="env-var">NVIDIA_API_KEY</span>
-            <span class="env-var">OPENCODE_API_KEY</span>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="baseUrl">Custom Base URL (optional)</label>
-          <input type="text" id="baseUrl" placeholder="Leave empty for default">
-          <div class="hint">Override the provider's default API endpoint</div>
-        </div>
+      <div class="hdr-r">
+        <div class="kbd"><kbd>Ctrl</kbd>+<kbd>S</kbd> Save</div>
+        <button class="btn-restart" onclick="restartServer()" id="restart-btn">🔄 Restart Server</button>
+        <div class="live">Connected</div>
+        <div class="ver">v0.2.0</div>
       </div>
-    </div>
+    </header>
 
-    <!-- Pipeline Settings -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">⚙️</span>
-        <h2>Pipeline Settings</h2>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="maxConcurrentClones">Max Concurrent Clones</label>
-            <input type="number" id="maxConcurrentClones" min="1" max="50" value="10">
-            <div class="hint">Parallel API calls per phase (max 50)</div>
-          </div>
-          <div class="form-group">
-            <label for="cloneTokenBudget">Per-Clone Token Budget</label>
-            <input type="number" id="cloneTokenBudget" min="1000" max="200000" value="30000">
-            <div class="hint">Token ceiling per file to cap runaway spend</div>
-          </div>
+    <main class="main">
+      <section class="hero">
+        <div class="hero-badge"><span class="dot"></span>Configuration Dashboard</div>
+        <h1>Multi-Agent<br><span class="g">Code Intelligence</span></h1>
+        <p class="sub">Configure your AI-powered code improvement pipeline. Select a provider, tune the engine, and deploy clones to improve your codebase.</p>
+        <div class="stats">
+          <div class="stat"><div class="val">4</div><div class="lbl">Providers</div></div>
+          <div class="stat"><div class="val">6</div><div class="lbl">Pipeline Phases</div></div>
+          <div class="stat"><div class="val">10x</div><div class="lbl">Parallel Clones</div></div>
         </div>
+      </section>
 
-        <div class="toggle-row">
-          <div class="toggle-label">
-            <div>Dry Run Approval</div>
-            <div class="desc">Pause for human approval before executing changes</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="dryRunApproval">
-            <span class="slider"></span>
-          </label>
-        </div>
+      <div class="pipeline">
+        <div class="pipe-step"><span class="num">0</span> Scan Graph</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">1</span> Clone Scan</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">2</span> Synthesize</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">3</span> Dry Run</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">4</span> Execute</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">5</span> Build</div><span class="pipe-arrow">→</span>
+        <div class="pipe-step"><span class="num">6</span> Deploy</div>
+      </div>
 
-        <div class="toggle-row">
-          <div class="toggle-label">
-            <div>Skip Deploy</div>
-            <div class="desc">Stop after build validation, skip git push</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="skipDeploy">
-            <span class="slider"></span>
-          </label>
-        </div>
+      <div class="prov-grid">
+        <div class="prov on" data-p="openrouter" onclick="selProv('openrouter')"><div class="ic">🌐</div><div class="nm">OpenRouter</div><div class="tg rec">Recommended</div></div>
+        <div class="prov" data-p="groq" onclick="selProv('groq')"><div class="ic">⚡</div><div class="nm">Groq</div><div class="tg fast">Fastest</div></div>
+        <div class="prov" data-p="nvidia" onclick="selProv('nvidia')"><div class="ic">🟢</div><div class="nm">NVIDIA</div><div class="tg gpu">NIM</div></div>
+        <div class="prov" data-p="opencode" onclick="selProv('opencode')"><div class="ic">🔮</div><div class="nm">OpenCode</div><div class="tg new">New</div></div>
       </div>
-    </div>
 
-    <!-- Git Settings -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">📦</span>
-        <h2>Git Settings</h2>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="gitBranch">Branch</label>
-            <input type="text" id="gitBranch" value="main">
+      <div class="card">
+        <div class="card-h"><div class="card-ic">🤖</div><h2>Provider Configuration</h2><div class="badge" id="prov-badge">openrouter</div></div>
+        <div class="card-b">
+          <div class="fr">
+            <div class="fg"><label>Model</label><input type="text" id="model" placeholder="anthropic/claude-sonnet-4"><div class="hint">Model ID — varies by provider</div></div>
+            <div class="fg"><label>Custom Base URL</label><input type="text" id="baseUrl" placeholder="https://api.example.com/v1"><div class="hint">Override provider default endpoint</div></div>
           </div>
-          <div class="form-group">
-            <label for="commitMessage">Commit Message</label>
-            <input type="text" id="commitMessage" value="chore: KageBunshin AI improvements">
+          <div class="fg">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-...">
+            <div class="hint">Or set via env: <span class="env">OPENROUTER_API_KEY</span> <span class="env">GROQ_API_KEY</span> <span class="env">NVIDIA_API_KEY</span> <span class="env">OPENCODE_API_KEY</span></div>
+            <div class="test-row">
+              <button class="btn-test" onclick="testConnection()">⚡ Test Connection</button>
+              <span class="test-result" id="test-result"></span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Advanced Settings -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">🔧</span>
-        <h2>Advanced Settings</h2>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="tier1MaxLines">Tier 1 Max Lines</label>
-            <input type="number" id="tier1MaxLines" min="10" max="200" value="50">
-            <div class="hint">Files below this = simple (tier 1)</div>
+      <div class="card">
+        <div class="card-h"><div class="card-ic">⚙️</div><h2>Pipeline Engine</h2></div>
+        <div class="card-b">
+          <div class="fr">
+            <div class="fg"><label>Max Concurrent Clones</label><input type="number" id="maxConcurrentClones" min="1" max="50" value="10"><div class="hint">Parallel API calls per phase (max 50)</div></div>
+            <div class="fg"><label>Per-Clone Token Budget</label><input type="number" id="cloneTokenBudget" min="1000" max="200000" value="30000"><div class="hint">Token ceiling per file to cap spend</div></div>
           </div>
-          <div class="form-group">
-            <label for="tier2MaxLines">Tier 2 Max Lines</label>
-            <input type="number" id="tier2MaxLines" min="50" max="1000" value="200">
-            <div class="hint">Files below this = medium (tier 2), else tier 3</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="ignorePatterns">Ignore Patterns</label>
-          <textarea id="ignorePatterns" placeholder="*.test.ts&#10;**/*.spec.ts&#10;docs/**"></textarea>
-          <div class="hint">One glob pattern per line. Files matching these are skipped.</div>
+          <div class="tr"><div class="tl"><div>Dry Run Approval</div><div class="d">Pause for human approval before executing changes</div></div><label class="sw"><input type="checkbox" id="dryRunApproval"><span class="tk"></span></label></div>
+          <div class="tr"><div class="tl"><div>Skip Deploy</div><div class="d">Stop after build validation, skip git push</div></div><label class="sw"><input type="checkbox" id="skipDeploy"><span class="tk"></span></label></div>
         </div>
       </div>
-    </div>
 
-    <!-- Server Settings -->
-    <div class="card">
-      <div class="card-header">
-        <span class="icon">🌐</span>
-        <h2>Server Settings</h2>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="port">HTTP Port</label>
-            <input type="number" id="port" min="1024" max="65535" value="3456">
-          </div>
-          <div class="form-group">
-            <label for="kbApiKey">Server Auth Token (optional)</label>
-            <input type="password" id="kbApiKey" placeholder="Leave open for unauthenticated">
-            <div class="hint">Bearer token for MCP endpoint authentication</div>
+      <div class="card">
+        <div class="card-h"><div class="card-ic">📦</div><h2>Git Deployment</h2></div>
+        <div class="card-b">
+          <div class="fr">
+            <div class="fg"><label>Branch</label><input type="text" id="gitBranch" value="main"></div>
+            <div class="fg"><label>Commit Message</label><input type="text" id="commitMessage" value="chore: KageBunshin AI improvements"></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="card">
-      <div class="actions">
-        <button class="btn btn-danger" onclick="resetConfig()">Reset to Defaults</button>
-        <button class="btn btn-secondary" onclick="loadConfig()">Discard Changes</button>
-        <button class="btn btn-primary" onclick="saveConfig()">Save Configuration</button>
+      <div class="card">
+        <div class="card-h"><div class="card-ic">🔧</div><h2>Advanced Tuning</h2></div>
+        <div class="card-b">
+          <div class="fr">
+            <div class="fg"><label>Tier 1 Max Lines</label><input type="number" id="tier1MaxLines" min="10" max="200" value="50"><div class="hint">Files below = simple (tier 1)</div></div>
+            <div class="fg"><label>Tier 2 Max Lines</label><input type="number" id="tier2MaxLines" min="50" max="1000" value="200"><div class="hint">Below = medium, above = complex (tier 3)</div></div>
+          </div>
+          <div class="fg"><label>Ignore Patterns</label><textarea id="ignorePatterns" placeholder="*.test.ts\n**/*.spec.ts\ndocs/**"></textarea><div class="hint">One glob per line — files matching are skipped</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="card-ic">🌐</div><h2>Server</h2></div>
+        <div class="card-b">
+          <div class="fr">
+            <div class="fg"><label>HTTP Port</label><input type="number" id="port" min="1024" max="65535" value="3456"></div>
+            <div class="fg"><label>Auth Token</label><input type="password" id="kbApiKey" placeholder="Optional — leave open for unauthenticated"><div class="hint">Bearer token for MCP endpoint</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0">
+        <div class="acts">
+          <button class="btn btn-e" onclick="showExport()">📋 Export</button>
+          <button class="btn btn-e" onclick="showImport()">📥 Import</button>
+          <div class="spacer"></div>
+          <span class="saved" id="last-saved"></span>
+          <button class="btn btn-d" onclick="resetCfg()">Reset</button>
+          <button class="btn btn-s" onclick="loadCfg()">Discard</button>
+          <button class="btn btn-p" onclick="saveCfg()">💾 Save Configuration</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  
+      <!-- Chat Panel -->
+      <div class="chat-card" id="chat-card">
+        <div class="chat-toggle" onclick="toggleChat()">
+          <div class="left"><span class="ic">💬</span> Test Provider</div>
+          <div class="right">
+            <span class="chat-info" id="chat-info">No messages yet</span>
+            <span class="chevron">▲</span>
+          </div>
+        </div>
+        <div class="chat-body" id="chat-body">
+          <div class="chat-welcome">
+            <div class="big">💬</div>
+            <div>Send a message to test your provider and model configuration</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Type a message to test..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+  <!-- Export/Import Modal -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <h3 id="modal-title">Export Configuration</h3>
+      <textarea id="modal-textarea" spellcheck="false"></textarea>
+      <div class="modal-acts">
+        <button class="btn btn-s" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-p" id="modal-action" onclick="modalConfirm()">Copy</button>
       </div>
     </div>
   </div>
@@ -470,94 +398,337 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    const API_BASE = window.location.origin + '/api/config';
+    const API = location.origin + '/api/config';
+    let prov = 'openrouter';
+    const MODELS = {openrouter:'anthropic/claude-sonnet-4',groq:'llama-3.3-70b-versatile',nvidia:'nvidia/llama-3.1-nemotron-70b-instruct',opencode:'kimi-k2.7-code'};
+    let lastSaved = '';
 
-    // Load config on page load
-    document.addEventListener('DOMContentLoaded', loadConfig);
-
-    async function loadConfig() {
-      try {
-        const res = await fetch(API_BASE);
-        if (!res.ok) throw new Error('Failed to load config');
-        const config = await res.json();
-
-        // Populate form fields
-        document.getElementById('provider').value = config.provider || 'openrouter';
-        document.getElementById('model').value = config.model || '';
-        document.getElementById('apiKey').value = config.apiKey || '';
-        document.getElementById('baseUrl').value = config.baseUrl || '';
-        document.getElementById('maxConcurrentClones').value = config.maxConcurrentClones || 10;
-        document.getElementById('cloneTokenBudget').value = config.cloneTokenBudget || 30000;
-        document.getElementById('dryRunApproval').checked = config.dryRunApproval || false;
-        document.getElementById('skipDeploy').checked = config.skipDeploy || false;
-        document.getElementById('gitBranch').value = config.gitBranch || 'main';
-        document.getElementById('commitMessage').value = config.commitMessage || '';
-        document.getElementById('tier1MaxLines').value = config.tierThresholds?.tier1MaxLines || 50;
-        document.getElementById('tier2MaxLines').value = config.tierThresholds?.tier2MaxLines || 200;
-        document.getElementById('ignorePatterns').value = (config.ignorePatterns || []).join('\n');
-        document.getElementById('port').value = config.port || 3456;
-        document.getElementById('kbApiKey').value = config.kbApiKey || '';
-      } catch (err) {
-        showToast('Failed to load configuration', 'error');
+    // Particles
+    (function(){
+      const c=document.getElementById('particles');
+      for(let i=0;i<30;i++){
+        const p=document.createElement('div');
+        const s=Math.random()*3+1;
+        p.style.cssText='position:absolute;width:'+s+'px;height:'+s+'px;background:rgba(108,92,231,'+(Math.random()*0.3+0.1)+');border-radius:50%;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation:drift '+(Math.random()*20+15)+'s linear infinite;animation-delay:-'+Math.random()*20+'s';
+        c.appendChild(p);
       }
+      const style=document.createElement('style');
+      style.textContent='@keyframes drift{0%{transform:translateY(0) translateX(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100vh) translateX('+(Math.random()>0.5?'':'-')+'50px);opacity:0}}';
+      document.head.appendChild(style);
+    })();
+
+    // Keyboard shortcut
+    document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveCfg()}});
+
+    function selProv(name){
+      prov=name;
+      document.querySelectorAll('.prov').forEach(p=>p.classList.toggle('on',p.dataset.p===name));
+      document.getElementById('model').placeholder=MODELS[name]||'';
+      document.getElementById('prov-badge').textContent=name;
     }
 
-    async function saveConfig() {
-      const config = {
-        provider: document.getElementById('provider').value,
-        model: document.getElementById('model').value,
-        apiKey: document.getElementById('apiKey').value,
-        baseUrl: document.getElementById('baseUrl').value || undefined,
-        maxConcurrentClones: parseInt(document.getElementById('maxConcurrentClones').value),
-        cloneTokenBudget: parseInt(document.getElementById('cloneTokenBudget').value),
-        dryRunApproval: document.getElementById('dryRunApproval').checked,
-        skipDeploy: document.getElementById('skipDeploy').checked,
-        gitBranch: document.getElementById('gitBranch').value,
-        commitMessage: document.getElementById('commitMessage').value,
-        tierThresholds: {
-          tier1MaxLines: parseInt(document.getElementById('tier1MaxLines').value),
-          tier2MaxLines: parseInt(document.getElementById('tier2MaxLines').value),
-        },
-        ignorePatterns: document.getElementById('ignorePatterns').value
-          .split('\n')
-          .map(l => l.trim())
-          .filter(Boolean),
-        port: parseInt(document.getElementById('port').value),
-        kbApiKey: document.getElementById('kbApiKey').value || undefined,
+    document.addEventListener('DOMContentLoaded',loadCfg);
+
+    async function loadCfg(){
+      try{
+        const r=await fetch(API);if(!r.ok)throw 0;const c=await r.json();
+        prov=c.provider||'openrouter';selProv(prov);
+        document.getElementById('model').value=c.model||'';
+        document.getElementById('apiKey').value=c.apiKey||'';
+        document.getElementById('baseUrl').value=c.baseUrl||'';
+        document.getElementById('maxConcurrentClones').value=c.maxConcurrentClones||10;
+        document.getElementById('cloneTokenBudget').value=c.cloneTokenBudget||30000;
+        document.getElementById('dryRunApproval').checked=c.dryRunApproval||false;
+        document.getElementById('skipDeploy').checked=c.skipDeploy||false;
+        document.getElementById('gitBranch').value=c.gitBranch||'main';
+        document.getElementById('commitMessage').value=c.commitMessage||'';
+        document.getElementById('tier1MaxLines').value=c.tierThresholds?.tier1MaxLines||50;
+        document.getElementById('tier2MaxLines').value=c.tierThresholds?.tier2MaxLines||200;
+        document.getElementById('ignorePatterns').value=(c.ignorePatterns||[]).join('\n');
+        document.getElementById('projectRoot').value=c.projectRoot||'';
+        updateWsStatus();
+        document.getElementById('port').value=c.port||3456;
+        document.getElementById('kbApiKey').value=c.kbApiKey||'';
+        document.getElementById('last-saved').textContent='Last loaded: '+new Date().toLocaleTimeString();
+      }catch(e){toast('Failed to load configuration','er')}
+    }
+
+    function getConfig(){
+      return{
+        projectRoot:document.getElementById('projectRoot').value,
+        provider:prov,
+        model:document.getElementById('model').value||MODELS[prov],
+        apiKey:document.getElementById('apiKey').value,
+        baseUrl:document.getElementById('baseUrl').value||undefined,
+        maxConcurrentClones:parseInt(document.getElementById('maxConcurrentClones').value),
+        cloneTokenBudget:parseInt(document.getElementById('cloneTokenBudget').value),
+        dryRunApproval:document.getElementById('dryRunApproval').checked,
+        skipDeploy:document.getElementById('skipDeploy').checked,
+        gitBranch:document.getElementById('gitBranch').value,
+        commitMessage:document.getElementById('commitMessage').value,
+        tierThresholds:{tier1MaxLines:parseInt(document.getElementById('tier1MaxLines').value),tier2MaxLines:parseInt(document.getElementById('tier2MaxLines').value)},
+        ignorePatterns:document.getElementById('ignorePatterns').value.split('\n').map(l=>l.trim()).filter(Boolean),
+        port:parseInt(document.getElementById('port').value),
+        kbApiKey:document.getElementById('kbApiKey').value||undefined
       };
+    }
 
-      try {
-        const res = await fetch(API_BASE, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(config),
+    async function saveCfg(){
+      try{
+        const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(getConfig())});
+        if(!r.ok)throw 0;
+        lastSaved=new Date().toLocaleTimeString();
+        document.getElementById('last-saved').textContent='Saved at '+lastSaved;
+        toast('Configuration saved!','ok');
+      }catch(e){toast('Failed to save','er')}
+    }
+
+    async function resetCfg(){
+      if(!confirm('Reset all settings to defaults?'))return;
+      try{const r=await fetch(API+'/reset',{method:'POST'});if(!r.ok)throw 0;await loadCfg();toast('Reset to defaults','ok')}catch(e){toast('Failed to reset','er')}
+    }
+
+    async function testConnection(){
+      const btn=document.querySelector('.btn-test');
+      const res=document.getElementById('test-result');
+      btn.classList.add('loading');btn.textContent='Testing...';res.textContent='';
+      try{
+        const r=await fetch(API);if(!r.ok)throw 0;
+        const c=await r.json();
+        if(c.apiKey){btn.textContent='✅ Connected';res.className='test-result ok';res.textContent=c.provider+' API key is set'}
+        else{btn.textContent='⚠️ No Key';res.className='test-result fail';res.textContent='Set an API key to use clones'}
+      }catch(e){btn.textContent='❌ Error';res.className='test-result fail';res.textContent='Could not verify'}
+      setTimeout(()=>{btn.classList.remove('loading');btn.textContent='⚡ Test Connection'},3000);
+    }
+
+    function showExport(){
+      document.getElementById('modal-title').textContent='Export Configuration';
+      document.getElementById('modal-textarea').value=JSON.stringify(getConfig(),null,2);
+      document.getElementById('modal-action').textContent='Copy to Clipboard';
+      document.getElementById('modal').classList.add('show');
+    }
+
+    function showImport(){
+      document.getElementById('modal-title').textContent='Import Configuration';
+      document.getElementById('modal-textarea').value='';
+      document.getElementById('modal-textarea').placeholder='Paste your config JSON here...';
+      document.getElementById('modal-action').textContent='Import';
+      document.getElementById('modal').classList.add('show');
+    }
+
+    function closeModal(){document.getElementById('modal').classList.remove('show')}
+
+    async function modalConfirm(){
+      const title=document.getElementById('modal-title').textContent;
+      if(title.includes('Export')){
+        await navigator.clipboard.writeText(document.getElementById('modal-textarea').value);
+        toast('Copied to clipboard!','ok');closeModal();
+      }else{
+        try{
+          const cfg=JSON.parse(document.getElementById('modal-textarea').value);
+          const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+          if(!r.ok)throw 0;await loadCfg();toast('Configuration imported!','ok');closeModal();
+        }catch(e){toast('Invalid JSON','er')}
+      }
+    }
+
+    function toast(msg,type){const t=document.getElementById('toast');t.innerHTML='<span class="ico">'+(type==='ok'?'✅':'❌')+'</span>'+msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3500)}
+
+    // 3D tilt
+    document.querySelectorAll('.card').forEach(c=>{
+      c.addEventListener('mousemove',e=>{
+        const r=c.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+        c.style.transform='perspective(1000px) rotateX('+((y-r.height/2)/r.height*-3)+'deg) rotateY('+((x-r.width/2)/r.width*3)+'deg) translateY(-3px)';
+      });
+      c.addEventListener('mouseleave',()=>{c.style.transform='perspective(1000px) rotateX(0) rotateY(0) translateY(0)'});
+    });
+  
+    
+    // ═══ Workspace ═══
+    function updateWsStatus(){
+      const val = document.getElementById('projectRoot').value;
+      const badge = document.getElementById('ws-status');
+      const info = document.getElementById('ws-info');
+      if(val){
+        badge.textContent = 'Active';
+        badge.style.background = 'rgba(0,210,160,0.1)';
+        badge.style.color = 'var(--green)';
+        const parts = val.split('/');
+        info.textContent = parts[parts.length-1] || parts[parts.length-2];
+      }else{
+        badge.textContent = 'Not set';
+        badge.style.background = '';
+        badge.style.color = '';
+        info.textContent = '';
+      }
+    }
+
+    async function browseWorkspace(){
+      // In browser, we can't browse filesystem — show a prompt
+      const current = document.getElementById('projectRoot').value;
+      const path = prompt('Enter absolute path to project root:', current || '/home/' + (await (await fetch('/api/config')).json()).projectRoot || '');
+      if(path !== null){
+        document.getElementById('projectRoot').value = path;
+        updateWsStatus();
+      }
+    }
+
+    // Update status when projectRoot changes
+    document.getElementById('projectRoot').addEventListener('input', updateWsStatus);
+
+    
+    // ═══ Restart Server ═══
+    async function restartServer(){
+      const overlay = document.getElementById('restart-overlay');
+      const log = document.getElementById('restart-log');
+      const status = document.getElementById('restart-status');
+      const title = document.getElementById('restart-title');
+      const spinner = document.getElementById('restart-spinner');
+      const btn = document.getElementById('restart-btn');
+
+      overlay.classList.add('show');
+      log.innerHTML = '';
+      btn.disabled = true;
+
+      addLog('info', 'Initiating server restart...');
+      status.textContent = 'Sending restart signal...';
+
+      try{
+        const r = await fetch('/api/restart', {method:'POST'});
+        const data = await r.json();
+
+        if(data.success){
+          addLog('ok', 'Restart signal sent successfully');
+          status.textContent = 'Server is restarting...';
+          addLog('info', 'Waiting for new server to come online...');
+
+          // Poll until server is back
+          let attempts = 0;
+          const maxAttempts = 30;
+          const poll = setInterval(async () => {
+            attempts++;
+            try{
+              const check = await fetch('/health');
+              if(check.ok){
+                addLog('ok', 'Server is back online!');
+                status.textContent = 'Restart complete!';
+                title.textContent = 'Restart Complete';
+                spinner.style.borderColor = 'var(--green)';
+                spinner.style.borderTopColor = 'var(--green)';
+                spinner.style.animation = 'none';
+
+                setTimeout(() => {
+                  overlay.classList.remove('show');
+                  btn.disabled = false;
+                  spinner.style.borderColor = '';
+                  spinner.style.borderTopColor = '';
+                  spinner.style.animation = '';
+                  title.textContent = 'Restarting Server';
+                  loadCfg();
+                }, 1500);
+                clearInterval(poll);
+              }
+            }catch(e){
+              if(attempts % 5 === 0) addLog('info', 'Waiting... (' + attempts + 's)');
+            }
+            if(attempts >= maxAttempts){
+              addLog('err', 'Timeout waiting for server');
+              status.textContent = 'Restart may have failed - refresh the page';
+              spinner.style.borderColor = 'var(--red)';
+              spinner.style.borderTopColor = 'var(--red)';
+              spinner.style.animation = 'none';
+              btn.disabled = false;
+              clearInterval(poll);
+            }
+          }, 1000);
+        }
+      }catch(e){
+        addLog('err', 'Error: ' + e.message);
+        status.textContent = 'Failed to restart';
+        btn.disabled = false;
+      }
+    }
+
+    function addLog(type, msg){
+      const log = document.getElementById('restart-log');
+      const line = document.createElement('div');
+      line.className = type;
+      const time = new Date().toLocaleTimeString();
+      line.textContent = '[' + time + '] ' + msg;
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    // ═══ Chat ═══
+    var chatOpen = false;
+    var chatMessages = [];
+
+    function toggleChat(){
+      chatOpen = !chatOpen;
+      document.getElementById('chat-card').classList.toggle('open', chatOpen);
+    }
+
+    async function sendChat(){
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if(!msg) return;
+
+      // Add user message
+      chatMessages.push({role:'user', content:msg});
+      addChatMsg('user', msg);
+      input.value = '';
+
+      // Update info
+      document.getElementById('chat-info').textContent = prov + ' / ' + (document.getElementById('model').value || MODELS[prov]);
+      document.getElementById('chat-send').disabled = true;
+
+      try{
+        const r = await fetch('/api/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            message: msg,
+            provider: prov,
+            apiKey: document.getElementById('apiKey').value,
+            model: document.getElementById('model').value || MODELS[prov],
+            baseUrl: document.getElementById('baseUrl').value || undefined,
+          })
         });
-        if (!res.ok) throw new Error('Failed to save');
-        showToast('Configuration saved!', 'success');
-      } catch (err) {
-        showToast('Failed to save configuration', 'error');
+        const data = await r.json();
+        if(!r.ok) throw data;
+
+        chatMessages.push({role:'assistant', content:data.content});
+        addChatMsg('assistant', data.content, data.usage);
+      }catch(e){
+        const err = e.error || e.message || 'Unknown error';
+        addChatMsg('error', 'Error: ' + err);
       }
+
+      document.getElementById('chat-send').disabled = false;
+      input.focus();
     }
 
-    async function resetConfig() {
-      if (!confirm('Reset all settings to defaults?')) return;
+    function addChatMsg(role, content, usage){
+      const body = document.getElementById('chat-body');
+      // Remove welcome message
+      const welcome = body.querySelector('.chat-welcome');
+      if(welcome) welcome.remove();
 
-      try {
-        const res = await fetch(API_BASE + '/reset', { method: 'POST' });
-        if (!res.ok) throw new Error('Failed to reset');
-        await loadConfig();
-        showToast('Configuration reset to defaults', 'success');
-      } catch (err) {
-        showToast('Failed to reset configuration', 'error');
+      const div = document.createElement('div');
+      div.className = 'chat-msg ' + role;
+      div.textContent = content;
+
+      if(usage && role === 'assistant'){
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = usage.totalTokens + ' tokens (' + usage.promptTokens + ' in + ' + usage.completionTokens + ' out)';
+        div.appendChild(meta);
       }
+
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
     }
 
-    function showToast(message, type) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast toast-${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 3000);
-    }
   </script>
 </body>
 </html>
