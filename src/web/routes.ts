@@ -32,6 +32,13 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
   // PUT /api/config — Update config
   router.put("/api/config", (req: Request, res: Response) => {
     try {
+      // Validate port
+      if (req.body.port !== undefined) {
+        const port = Number(req.body.port);
+        if (!port || port < 1024 || port > 65535) {
+          req.body.port = 3456; // fallback to default
+        }
+      }
       const updated = configStore.update(req.body);
       res.json({ success: true, config: updated });
     } catch (err) {
@@ -78,6 +85,10 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
       };
       const url = (baseUrl || urls[prov] || urls.openrouter) + "/chat/completions";
 
+      // Timeout after 30 seconds
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -89,7 +100,10 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
           messages: [{ role: "user", content: message }],
           max_tokens: 1024,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!response.ok) {
         const errBody = await response.text();
@@ -111,8 +125,13 @@ export function createConfigRoutes(configStore: ConfigStore): Router {
           totalTokens: (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
         },
       });
-    } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : "Unknown error" });
+    } catch (err: any) {
+      const msg = err.name === "AbortError"
+        ? "Request timed out after 30s — check your API key and model"
+        : err instanceof Error ? err.message : "Unknown error";
+      console.error("[Chat] Error:", msg);
+
+      res.status(500).json({ error: msg });
     }
   });
 

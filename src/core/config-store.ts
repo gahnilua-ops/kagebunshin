@@ -42,7 +42,7 @@ export interface StoredConfig {
 const DEFAULT_STORED_CONFIG: StoredConfig = {
   projectRoot: process.cwd(),
   provider: "openrouter",
-  model: "anthropic/claude-sonnet-4",
+  model: "meta-llama/llama-3.1-8b-instruct",
   apiKey: "",
   maxConcurrentClones: 10,
   cloneTokenBudget: 30000,

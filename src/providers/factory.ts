@@ -26,7 +26,7 @@ export const PROVIDER_URLS: Record<ProviderName, string> = {
 /** Recommended models per provider */
 export const RECOMMENDED_MODELS: Record<ProviderName, string[]> = {
   openrouter: [
-    "anthropic/claude-sonnet-4",
+    "meta-llama/llama-3.1-8b-instruct",
     "openai/gpt-4o",
     "meta-llama/llama-3.1-70b-instruct",
     "google/gemini-2.0-flash-001",

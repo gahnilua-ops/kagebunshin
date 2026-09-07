@@ -32,7 +32,7 @@ import { createConfigRoutes } from "./web/routes";
 
 const DEFAULT_CONFIG: Partial<KageBunshinConfig> = {
   provider: (process.env.DEFAULT_PROVIDER as ProviderName) ?? "openrouter",
-  model: process.env.DEFAULT_MODEL ?? "anthropic/claude-sonnet-4",
+  model: process.env.DEFAULT_MODEL ?? "meta-llama/llama-3.1-8b-instruct",
   maxConcurrentClones: 10,
   cloneTokenBudget: 30000,
   dryRunApproval: false,
