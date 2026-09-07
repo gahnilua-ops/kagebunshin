@@ -573,8 +573,10 @@
       }
     }
 
-    // Update status when projectRoot changes
-    document.getElementById('projectRoot').addEventListener('input', updateWsStatus);
+    // Update status when projectRoot changes (wait for DOM)
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('projectRoot').addEventListener('input', updateWsStatus);
+    });
 
     
     // ═══ Restart Server ═══
