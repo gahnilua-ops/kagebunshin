@@ -744,7 +744,7 @@
       const div = document.createElement('div');
       div.className = 'chat-msg ' + role;
       // Use innerHTML for error messages to support formatting
-      if(role === 'error') div.innerHTML = content.replace(/\n/g, '<br>');
+      if(content.includes('<span') || content.includes('<br>') || role === 'error') div.innerHTML = content;
       else div.textContent = content;
 
       if(usage && role === 'assistant'){
